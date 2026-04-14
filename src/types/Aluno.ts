@@ -1,0 +1,30 @@
+export type Aluno = {
+  id: string; // Internal ID for React keys
+  ano: string;
+  codigoEscola: string;
+  matricula: string;
+  codigoSetps?: string;
+  nome: string;
+  sexo: "M" | "F";
+  dataNascimento: string;
+  nomeMae: string;
+  nomePai?: string;
+  rg?: string;
+  orgaoExpedidor?: string;
+  dataEmissaoRg?: string;
+  cpf?: string;
+  certidao?: string;
+  livro?: string;
+  folha?: string;
+  endereco: string;
+  numero: string;
+  complemento?: string;
+  bairro: string;
+  cep: string;
+  telefone?: string;
+  email?: string;
+  grau: "1" | "2" | "3";
+  serie: string;
+  turno: string;
+  flag: "I" | "A" | "E";
+};

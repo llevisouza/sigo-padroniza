@@ -1,0 +1,35 @@
+import { Aluno } from "../../src/types/Aluno";
+
+export function createAluno(overrides: Partial<Aluno> = {}): Aluno {
+  return {
+    id: "aluno-base",
+    ano: "2026",
+    codigoEscola: "12345",
+    matricula: "2023001",
+    codigoSetps: "98765",
+    nome: "JOAO DA SILVA",
+    sexo: "M",
+    dataNascimento: "01/01/2010",
+    nomeMae: "MARIA DA SILVA",
+    nomePai: "JOSE DA SILVA",
+    rg: "123456789",
+    orgaoExpedidor: "SSP",
+    dataEmissaoRg: "02/02/2020",
+    cpf: "12345678901",
+    certidao: "",
+    livro: "",
+    folha: "",
+    endereco: "RUA DAS FLORES",
+    numero: "100",
+    complemento: "CASA",
+    bairro: "CENTRO",
+    cep: "40000000",
+    telefone: "71999999999",
+    email: "aluno@example.com",
+    grau: "1",
+    serie: "01",
+    turno: "1",
+    flag: "I",
+    ...overrides,
+  };
+}

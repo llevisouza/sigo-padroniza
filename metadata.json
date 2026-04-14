@@ -1,0 +1,5 @@
+{
+  "name": "SIGO PADRONIZA",
+  "description": "Sistema web para geracao, edicao e validacao de arquivos TXT no layout SIGO / SETPS.",
+  "requestFramePermissions": []
+}
