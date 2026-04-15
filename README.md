@@ -17,7 +17,7 @@
 
 <br/>
 
-## 📋 Sobre o Projeto
+## Sobre o Projeto
 
 O **SIGO Padroniza** é uma aplicação web voltada para importação, revisão, correção e exportação de arquivos `.txt` no leiaute fixo de 525 posições utilizado no fluxo educacional do SIGO/SETPS.
 
@@ -25,7 +25,7 @@ Foi projetado para o saneamento operacional de bases grandes, permitindo que ope
 
 <br/>
 
-## ✨ Funcionalidades
+## Funcionalidades
 
 | Recurso | Descrição |
 |---------|-----------|
@@ -40,7 +40,7 @@ Foi projetado para o saneamento operacional de bases grandes, permitindo que ope
 
 <br/>
 
-## 🔄 Fluxo de Trabalho
+## Fluxo de Trabalho
 
 ```
 ┌─────────────┐     ┌──────────────┐     ┌──────────────────┐     ┌───────────────┐
@@ -57,7 +57,7 @@ Foi projetado para o saneamento operacional de bases grandes, permitindo que ope
 
 <br/>
 
-## 🛠️ Stack Técnica
+## Stack Técnica
 
 | Camada | Tecnologia | Versão | Finalidade |
 |--------|-----------|--------|------------|
@@ -72,7 +72,7 @@ Foi projetado para o saneamento operacional de bases grandes, permitindo que ope
 
 <br/>
 
-## 📁 Estrutura do Projeto
+## Estrutura do Projeto
 
 ```
 sigo-padroniza/
@@ -107,7 +107,7 @@ sigo-padroniza/
 
 <br/>
 
-## 🚀 Como Executar
+## Como Executar
 
 ### Pré-requisitos
 
@@ -140,7 +140,7 @@ Os arquivos otimizados serão gerados na pasta `dist/`.
 
 <br/>
 
-## 🧪 Testes e Qualidade
+## Testes e Qualidade
 
 ```bash
 # Verificação de tipos
@@ -164,7 +164,7 @@ npm run check:roundtrip
 
 <br/>
 
-## 🌐 Deploy
+## Deploy
 
 O deploy é feito automaticamente via **GitHub Actions** para o **GitHub Pages**.
 
@@ -178,7 +178,7 @@ O deploy é feito automaticamente via **GitHub Actions** para o **GitHub Pages**
 
 <br/>
 
-## ⚠️ Sobre Armazenamento
+## Sobre Armazenamento
 
 > **Importante:** O SIGO Padroniza processa todos os dados **exclusivamente no navegador**.
 
@@ -190,7 +190,7 @@ Esse comportamento é intencional — reduz custos de infraestrutura e elimina a
 
 <br/>
 
-## 🔒 Segurança e Privacidade
+## Segurança e Privacidade
 
 - **Não suba** arquivos reais de alunos para o repositório.
 - O diretório `archive/` está fora do versionamento.
@@ -199,7 +199,7 @@ Esse comportamento é intencional — reduz custos de infraestrutura e elimina a
 
 <br/>
 
-## 📌 Boas Práticas de Uso
+## Boas Práticas de Uso
 
 1. Trabalhe sempre com uma **cópia** do arquivo original.
 2. Revise as pendências antes de exportar.
@@ -209,7 +209,7 @@ Esse comportamento é intencional — reduz custos de infraestrutura e elimina a
 
 <br/>
 
-## 📚 Documentação
+## Documentação
 
 | Documento | Descrição |
 |-----------|-----------|
@@ -217,7 +217,7 @@ Esse comportamento é intencional — reduz custos de infraestrutura e elimina a
 
 <br/>
 
-## 🔗 Links
+## Links
 
 | | |
 |---|---|
@@ -226,6 +226,6 @@ Esse comportamento é intencional — reduz custos de infraestrutura e elimina a
 
 <br/>
 
-## 📄 Licença
+## Licença
 
 A definir conforme a política do projeto antes de distribuição pública.
