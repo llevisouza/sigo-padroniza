@@ -15,7 +15,7 @@ export function createAluno(overrides: Partial<Aluno> = {}): Aluno {
     rg: "123456789",
     orgaoExpedidor: "SSP",
     dataEmissaoRg: "02/02/2020",
-    cpf: "12345678901",
+    cpf: "52998224725",
     certidao: "",
     livro: "",
     folha: "",

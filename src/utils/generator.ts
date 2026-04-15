@@ -1,6 +1,6 @@
 import { Aluno } from "../types/Aluno";
+import { ExportConfig, ExportFlag } from "../types/Export";
 import { onlyDigits } from "./stringUtils";
-import { ExportFlag } from "./exportPreparation";
 
 const DOWNLOAD_CLEANUP_DELAY_MS = 1000;
 
@@ -60,27 +60,52 @@ export function gerarConteudoTXT(alunos: Aluno[], exportFlag?: ExportFlag): stri
     .join("\r\n");
 }
 
-export function exportarTXT(alunos: Aluno[], exportFlag?: ExportFlag) {
-  const conteudo = gerarConteudoTXT(alunos, exportFlag);
+function formatTimestamp(date: Date) {
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const year = date.getFullYear().toString();
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  const seconds = date.getSeconds().toString().padStart(2, "0");
+
+  return `${day}${month}${year}${hours}${minutes}${seconds}`;
+}
+
+export function sanitizeExportFileBaseName(value: string | undefined): string {
+  return (value || "")
+    .trim()
+    .replace(/\.txt$/i, "")
+    .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "")
+    .replace(/\s+/g, "_");
+}
+
+export function buildSuggestedExportFileBaseName(
+  institutionCode: string,
+  exportFlag: ExportFlag,
+  date = new Date()
+): string {
+  const normalizedInstitutionCode = onlyDigits(institutionCode);
+
+  if (!normalizedInstitutionCode) {
+    return "";
+  }
+
+  return `${normalizedInstitutionCode}_${formatTimestamp(date)}${exportFlag}`;
+}
+
+export function buildExportFileName(config: ExportConfig, date = new Date()): string {
+  const customBaseName = sanitizeExportFileBaseName(config.fileName);
+  const suggestedBaseName = buildSuggestedExportFileBaseName(config.institutionCode, config.exportFlag, date);
+  const baseName = customBaseName || suggestedBaseName || `exportacao_${formatTimestamp(date)}${config.exportFlag}`;
+
+  return `${baseName}.txt`;
+}
+
+export function exportarTXT(alunos: Aluno[], config: ExportConfig) {
+  const conteudo = gerarConteudoTXT(alunos, config.exportFlag);
   const blob = new Blob([conteudo], { type: "text/plain;charset=utf-8" });
   const url = URL.createObjectURL(blob);
-
-  const first = alunos[0];
-  const escolaRaw = onlyDigits(first?.codigoEscola) || "0";
-  const escola = escolaRaw.padStart(5, "0").slice(0, 5);
-  const flag = exportFlag || first?.flag || "I";
-
-  const now = new Date();
-  const day = now.getDate().toString().padStart(2, "0");
-  const month = (now.getMonth() + 1).toString().padStart(2, "0");
-  const year = now.getFullYear().toString();
-  const hours = now.getHours().toString().padStart(2, "0");
-  const minutes = now.getMinutes().toString().padStart(2, "0");
-  const seconds = now.getSeconds().toString().padStart(2, "0");
-
-  const dateStr = `${day}${month}${year}`;
-  const timeStr = `${hours}${minutes}${seconds}`;
-  const filename = `${escola}_${dateStr}${timeStr}${flag}.txt`;
+  const filename = buildExportFileName(config);
 
   const a = document.createElement("a");
   a.href = url;

@@ -1,122 +1,168 @@
-import React from 'react';
-import { Aluno } from '../types/Aluno';
-import { Trash2, Edit, AlertTriangle, CheckCircle, Wand2 } from 'lucide-react';
-import { AlunoInsight } from '../types/AlunoInsight';
-import { getAlunoAdjustments } from '../utils/adjustments';
-import { validateAluno } from '../utils/validator';
+import React, { memo } from "react";
+import { Edit, Trash2, AlertTriangle, Wand2 } from "lucide-react";
+import { Aluno } from "../types/Aluno";
+import { AlunoInsight } from "../types/AlunoInsight";
+import { getAlunoAdjustments } from "../utils/adjustments";
+import {
+  getAdjustmentCallToAction,
+  getFieldDisplayName,
+  getScopedErrorFields,
+} from "../utils/adjustmentPresentation";
+import { validateAluno } from "../utils/validator";
 
 interface TabelaAlunosProps {
   alunos: Aluno[];
   insightsById?: Map<string, AlunoInsight>;
   onDelete: (id: string) => void;
   onEdit: (aluno: Aluno) => void;
-  onAdjust: (aluno: Aluno) => void;
+  onAdjust: (aluno: Aluno, preferredField?: string | null) => void;
+  preferredAdjustmentField?: string | null;
 }
 
-export const TabelaAlunos: React.FC<TabelaAlunosProps> = ({ alunos, insightsById, onDelete, onEdit, onAdjust }) => {
-  if (alunos.length === 0) {
+export const TabelaAlunos: React.FC<TabelaAlunosProps> = memo(
+  ({ alunos, insightsById, onDelete, onEdit, onAdjust, preferredAdjustmentField }) => {
+    if (alunos.length === 0) {
+      return (
+        <div className="flex min-h-[280px] flex-col items-center justify-center rounded-b-lg bg-white px-6 py-12 text-center">
+          <AlertTriangle className="mb-4 h-10 w-10 text-slate-300" />
+          <p className="text-sm font-medium text-slate-900">Nenhum registro encontrado.</p>
+          <p className="mt-1 max-w-sm text-[13px] leading-relaxed text-slate-500">
+            Ajuste os filtros ou importe um arquivo para preencher esta tabela.
+          </p>
+        </div>
+      );
+    }
+
     return (
-      <div className="flex flex-col items-center justify-center py-12 bg-slate-50 rounded-xl border border-slate-200">
-        <AlertTriangle className="w-12 h-12 text-slate-300 mb-4" />
-        <p className="text-slate-500 font-medium">Nenhum aluno cadastrado.</p>
+      <div className="custom-scrollbar min-h-0 flex-1 overflow-auto">
+        <table className="w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b border-slate-200 bg-slate-50 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+              <th className="sticky top-0 z-10 w-40 bg-slate-50 px-4 py-3">Status</th>
+              <th className="sticky top-0 z-10 bg-slate-50 px-4 py-3">Matricula</th>
+              <th className="sticky top-0 z-10 bg-slate-50 px-4 py-3">Nome</th>
+              <th className="sticky top-0 z-10 bg-slate-50 px-4 py-3">CPF</th>
+              <th className="sticky top-0 z-10 bg-slate-50 px-4 py-3">Serie/Turno</th>
+              <th className="sticky top-0 z-10 bg-slate-50 px-4 py-3 text-right">Acoes</th>
+            </tr>
+          </thead>
+
+          <tbody className="bg-white text-[12px] text-slate-900">
+            {alunos.map((aluno) => {
+              const insight = insightsById?.get(aluno.id);
+              const errors = insight?.errors ?? validateAluno(aluno);
+              const blockingErrors = insight?.blockingErrors ?? errors.filter((error) => error.severity === "error");
+              const warnings = insight?.warnings ?? errors.filter((error) => error.severity === "warning");
+              const adjustments = insight?.adjustments ?? getAlunoAdjustments(aluno);
+              const adjustmentAction = getAdjustmentCallToAction(adjustments, errors, preferredAdjustmentField);
+              const pendingFields = getScopedErrorFields(errors);
+              const pendingSummary = buildPendingSummary(pendingFields);
+
+              const primaryError = blockingErrors[0] ?? warnings[0] ?? null;
+              const isValid = primaryError === null;
+              const badgeLabel = isValid
+                ? "Valido"
+                : `${pendingFields.length} pendencia${pendingFields.length > 1 ? "s" : ""}`;
+              const badgeClass = isValid
+                ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+                : "border-amber-100 bg-amber-50 text-amber-700";
+              const dotClass = isValid ? "bg-emerald-500" : "bg-amber-500";
+              const issuesTooltip = errors.map((error) => error.message).join("\n");
+              const ActionIcon = adjustmentAction.mode === "manual" ? AlertTriangle : Wand2;
+              const actionClass =
+                adjustmentAction.mode === "none"
+                  ? "cursor-not-allowed bg-slate-100 text-slate-400"
+                  : adjustmentAction.mode === "manual"
+                    ? "border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                    : "border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100";
+
+              return (
+                <tr key={aluno.id} className="group border-b border-slate-100 transition-colors duration-150 hover:bg-slate-50/80">
+                  <td className="px-4 py-3">
+                    <div className="space-y-1">
+                      <span
+                        className={`inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${badgeClass}`}
+                        title={issuesTooltip || "Registro valido"}
+                      >
+                        <span className={`h-1.5 w-1.5 rounded-full ${dotClass}`} />
+                        {badgeLabel}
+                      </span>
+
+                      {!isValid && pendingSummary && (
+                        <p
+                          className="max-w-[170px] text-[10px] leading-[1.15rem] text-slate-500"
+                          title={pendingFields.map(getFieldDisplayName).join(", ")}
+                        >
+                          {pendingSummary}
+                        </p>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 font-medium text-slate-800">{aluno.matricula || "---"}</td>
+                  <td className="max-w-[320px] truncate px-4 py-3 text-slate-950">{aluno.nome || "---"}</td>
+                  <td className="px-4 py-3 text-slate-500">{aluno.cpf || "---"}</td>
+                  <td className="px-4 py-3 text-slate-500">
+                    {aluno.serie || "---"} / {aluno.turno || "---"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                      <button
+                        onClick={() => onAdjust(aluno, preferredAdjustmentField)}
+                        disabled={adjustmentAction.mode === "none"}
+                        className={`inline-flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-[10px] font-medium transition-colors duration-150 ${actionClass}`}
+                        title={adjustmentAction.title}
+                      >
+                        <ActionIcon className="h-3 w-3" />
+                        {adjustmentAction.label}
+                      </button>
+
+                      <button
+                        onClick={() => onEdit(aluno)}
+                        className="rounded-lg p-1.5 text-slate-400 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-900"
+                        title="Editar"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+
+                      <button
+                        onClick={() => onDelete(aluno.id)}
+                        className="rounded-lg p-1.5 text-slate-400 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-900"
+                        title="Excluir"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     );
   }
+);
 
-  return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
-      <table className="w-full text-sm text-left text-slate-500">
-        <thead className="text-xs text-slate-700 uppercase bg-slate-100 border-b border-slate-200">
-          <tr>
-            <th className="px-4 py-3 font-bold">Status</th>
-            <th className="px-4 py-3 font-bold">Matricula</th>
-            <th className="px-4 py-3 font-bold">Nome</th>
-            <th className="px-4 py-3 font-bold">CPF</th>
-            <th className="px-4 py-3 font-bold">Serie/Turno</th>
-            <th className="px-4 py-3 font-bold">Acoes</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-200 bg-white">
-          {alunos.map((aluno) => {
-            const insight = insightsById?.get(aluno.id);
-            const errors = insight?.errors ?? validateAluno(aluno);
-            const blockingErrors = insight?.blockingErrors ?? errors.filter((error) => error.severity === 'error');
-            const warnings = insight?.warnings ?? errors.filter((error) => error.severity === 'warning');
-            const adjustments = insight?.adjustments ?? getAlunoAdjustments(aluno);
-            const isValid = blockingErrors.length === 0;
-            const hasWarnings = warnings.length > 0;
+function toTitleCase(value: string) {
+  if (!value) {
+    return value;
+  }
 
-            return (
-              <tr key={aluno.id} className="hover:bg-slate-50 transition-colors">
-                <td className="px-4 py-3">
-                  {isValid && !hasWarnings ? (
-                    <div className="flex items-center text-green-600" title="Valido">
-                      <CheckCircle className="w-5 h-5" />
-                    </div>
-                  ) : isValid && hasWarnings ? (
-                    <div
-                      className="flex items-center text-blue-500 cursor-help"
-                      title={`Avisos:\n${warnings.map((error) => error.message).join('\n')}`}
-                    >
-                      <AlertTriangle className="w-5 h-5" />
-                      <span className="ml-1 text-[10px] font-bold">{warnings.length}</span>
-                    </div>
-                  ) : (
-                    <div
-                      className="flex items-center text-amber-500 cursor-help"
-                      title={`Pendencias:\n${blockingErrors.map((error) => error.message).join('\n')}${hasWarnings ? `\n\nAvisos:\n${warnings.map((error) => error.message).join('\n')}` : ''}`}
-                    >
-                      <AlertTriangle className="w-5 h-5" />
-                      <span className="ml-1 text-[10px] font-bold">{blockingErrors.length}</span>
-                    </div>
-                  )}
-                </td>
-                <td className="px-4 py-3 font-mono text-slate-900">{aluno.matricula}</td>
-                <td className="px-4 py-3 font-medium text-slate-900 truncate max-w-[200px]">{aluno.nome}</td>
-                <td className="px-4 py-3 font-mono">{aluno.cpf || '---'}</td>
-                <td className="px-4 py-3">
-                  {aluno.serie} / {aluno.turno}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => onAdjust(aluno)}
-                      disabled={adjustments.length === 0}
-                      className={`inline-flex items-center rounded-lg px-2.5 py-1.5 text-xs font-bold transition-colors ${
-                        adjustments.length > 0
-                          ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100'
-                          : 'text-slate-400 bg-slate-100 cursor-not-allowed'
-                      }`}
-                      title={
-                        adjustments.length > 0
-                          ? `${adjustments.length} ajustes sugeridos`
-                          : 'Nenhum ajuste sugerido'
-                      }
-                    >
-                      <Wand2 className="w-3.5 h-3.5 mr-1.5" />
-                      Ajustar
-                    </button>
-                    <button
-                      onClick={() => onEdit(aluno)}
-                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="Editar"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => onDelete(aluno.id)}
-                      className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Excluir"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-};
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function buildPendingSummary(fields: string[]) {
+  if (fields.length === 0) {
+    return "";
+  }
+
+  const labels = fields.map((field) => toTitleCase(getFieldDisplayName(field)));
+  const visibleLabels = labels.slice(0, 2);
+  const hiddenCount = labels.length - visibleLabels.length;
+
+  if (hiddenCount <= 0) {
+    return visibleLabels.join(", ");
+  }
+
+  return `${visibleLabels.join(", ")} e +${hiddenCount}`;
+}

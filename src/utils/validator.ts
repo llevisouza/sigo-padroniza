@@ -1,6 +1,6 @@
 import { Aluno } from "../types/Aluno";
 import { AlunoAdjustment, getAlunoAdjustments } from "./adjustments";
-import { onlyDigits } from "./stringUtils";
+import { isValidCPF, onlyDigits } from "./stringUtils";
 
 export type ValidationError = {
   field: keyof Aluno;
@@ -152,6 +152,10 @@ export function validateAluno(
 
   if (aluno.cpf && onlyDigits(aluno.cpf).length > 0 && onlyDigits(aluno.cpf).length !== 11) {
     errors.push({ field: "cpf", message: "CPF deve ter exatamente 11 digitos numericos", severity: "error" });
+  }
+
+  if (aluno.cpf && onlyDigits(aluno.cpf).length === 11 && !isValidCPF(aluno.cpf)) {
+    errors.push({ field: "cpf", message: "CPF invalido", severity: "error" });
   }
 
   if (!aluno.cep || onlyDigits(aluno.cep).length !== 8) {

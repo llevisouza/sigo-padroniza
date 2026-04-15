@@ -18,8 +18,8 @@ test("validator aponta obrigatoriedades de documento para maiores de 10 anos", (
 
 test("validator transforma ajustes pendentes em mensagens acionaveis", () => {
   const aluno = createAluno({
-    nome: "José da Silva",
-    nomeMae: "Maria de Fátima",
+    nome: "Jose da Silva!",
+    nomeMae: "Maria de Fatima#",
     cep: "41925-157",
   });
 
@@ -28,4 +28,14 @@ test("validator transforma ajustes pendentes em mensagens acionaveis", () => {
 
   assert(errors.some((error) => error.field === "nome" && error.message.includes("Use o botao Ajustar")));
   assert(errors.some((error) => error.field === "cep" && error.severity === "error"));
+});
+
+test("validator marca CPF informado com digitos invalidos", () => {
+  const aluno = createAluno({
+    cpf: "12345678901",
+  });
+
+  const errors = validateAluno(aluno);
+
+  assert(errors.some((error) => error.field === "cpf" && error.message === "CPF invalido"));
 });

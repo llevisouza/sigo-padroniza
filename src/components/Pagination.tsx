@@ -1,5 +1,5 @@
-import React from 'react';
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import React from "react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 
 interface PaginationProps {
   currentPage: number;
@@ -8,7 +8,6 @@ interface PaginationProps {
   pageSize: number;
   onPageSizeChange: (size: number) => void;
   totalItems: number;
-  itemLabel?: string;
 }
 
 export const Pagination: React.FC<PaginationProps> = ({
@@ -19,21 +18,26 @@ export const Pagination: React.FC<PaginationProps> = ({
   onPageSizeChange,
   totalItems,
 }) => {
-  if (totalPages <= 1 && totalItems <= 10) return null;
+  if (totalPages <= 1 && totalItems <= pageSize) {
+    return null;
+  }
+
+  const start = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const end = Math.min(currentPage * pageSize, totalItems);
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between px-4 py-4 bg-white border-t border-slate-200 gap-4">
-      <div className="text-sm text-slate-500">
-        Mostrando <span className="font-bold text-slate-900">{(currentPage - 1) * pageSize + 1}</span> a{' '}
-        <span className="font-bold text-slate-900">{Math.min(currentPage * pageSize, totalItems)}</span> de{' '}
-        <span className="font-bold text-slate-900">{totalItems}</span> registros
-      </div>
+    <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50/70 px-4 py-3 md:flex-row md:items-center md:justify-between">
+      <p className="text-[12px] text-slate-500">
+        Mostrando <span className="font-semibold text-slate-900">{start.toLocaleString("pt-BR")}</span> a{" "}
+        <span className="font-semibold text-slate-900">{end.toLocaleString("pt-BR")}</span> de{" "}
+        <span className="font-semibold text-slate-900">{totalItems.toLocaleString("pt-BR")}</span> registros
+      </p>
 
-      <div className="flex items-center space-x-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <select
           value={pageSize}
-          onChange={(e) => onPageSizeChange(Number(e.target.value))}
-          className="text-sm border border-slate-200 rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-blue-500"
+          onChange={(event) => onPageSizeChange(Number(event.target.value))}
+          className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-[12px] text-slate-700 shadow-sm outline-none transition-colors duration-150 focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
         >
           <option value={10}>10 por pagina</option>
           <option value={25}>25 por pagina</option>
@@ -41,42 +45,50 @@ export const Pagination: React.FC<PaginationProps> = ({
           <option value={100}>100 por pagina</option>
         </select>
 
-        <div className="flex items-center space-x-1">
-          <button
-            onClick={() => onPageChange(1)}
+        <div className="flex items-center gap-1">
+          <PaginationButton icon={<ChevronsLeft className="h-4 w-4" />} disabled={currentPage === 1} onClick={() => onPageChange(1)} />
+          <PaginationButton
+            icon={<ChevronLeft className="h-4 w-4" />}
             disabled={currentPage === 1}
-            className="p-1 rounded hover:bg-slate-100 disabled:opacity-30 transition-colors"
-          >
-            <ChevronsLeft className="w-5 h-5" />
-          </button>
-          <button
             onClick={() => onPageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="p-1 rounded hover:bg-slate-100 disabled:opacity-30 transition-colors"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
+          />
 
-          <div className="px-4 py-1 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold">
-            Pagina {currentPage} de {totalPages}
+          <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-[12px] font-medium text-slate-700 shadow-sm">
+            Pagina {currentPage.toLocaleString("pt-BR")} de {totalPages.toLocaleString("pt-BR")}
           </div>
 
-          <button
+          <PaginationButton
+            icon={<ChevronRight className="h-4 w-4" />}
+            disabled={currentPage === totalPages}
             onClick={() => onPageChange(currentPage + 1)}
+          />
+          <PaginationButton
+            icon={<ChevronsRight className="h-4 w-4" />}
             disabled={currentPage === totalPages}
-            className="p-1 rounded hover:bg-slate-100 disabled:opacity-30 transition-colors"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-          <button
             onClick={() => onPageChange(totalPages)}
-            disabled={currentPage === totalPages}
-            className="p-1 rounded hover:bg-slate-100 disabled:opacity-30 transition-colors"
-          >
-            <ChevronsRight className="w-5 h-5" />
-          </button>
+          />
         </div>
       </div>
     </div>
   );
 };
+
+function PaginationButton({
+  icon,
+  disabled,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors duration-150 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      {icon}
+    </button>
+  );
+}

@@ -1,5 +1,6 @@
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { AppStats, FilterMode } from "../types/AppUi";
+import { getFieldDisplayName } from "../utils/adjustmentPresentation";
 
 type ValidationBannerProps = {
   visible: boolean;
@@ -9,6 +10,13 @@ type ValidationBannerProps = {
   onApplyFilter: (mode: FilterMode, field?: string | null) => void;
   onClearErrorFieldFilter: () => void;
 };
+
+const operationFilters: Array<{ label: string; mode: FilterMode }> = [
+  { label: "Todos os Registros", mode: "all" },
+  { label: "Inclusao (I)", mode: "I" },
+  { label: "Alteracao (A)", mode: "A" },
+  { label: "Exclusao (E)", mode: "E" },
+];
 
 export function ValidationBanner({
   visible,
@@ -22,142 +30,118 @@ export function ValidationBanner({
     return null;
   }
 
+  const hasPendencies = !stats.isAllValid;
+  const title = hasPendencies
+    ? `Exportacao liberada com ${stats.invalid.toLocaleString("pt-BR")} pendencias`
+    : "Pronto para exportacao";
+  const description = hasPendencies
+    ? stats.adjustableRecords > 0
+      ? "Use os ajustes automaticos quando houver e revise manualmente os demais campos antes de exportar."
+      : "Nao ha ajuste automatico disponivel para esta base. As pendencias atuais exigem revisao manual."
+    : "Todos os campos obrigatorios foram preenchidos corretamente.";
+
   return (
-    <div
-      className={`mb-8 flex flex-col gap-6 rounded-3xl border p-6 shadow-xl shadow-slate-200/50 ${
-        stats.isAllValid ? "border-green-200 bg-white" : "border-amber-200 bg-white"
-      }`}
-    >
-      <div className="flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-center">
-        <div className="flex items-center">
-          {stats.isAllValid ? (
-            <div className="mr-4 rounded-2xl bg-green-100 p-3">
-              <CheckCircle2 className="h-8 w-8 text-green-600" />
-            </div>
-          ) : (
-            <div className="mr-4 rounded-2xl bg-amber-100 p-3">
-              <AlertTriangle className="h-8 w-8 text-amber-600" />
-            </div>
-          )}
-          <div>
-            <h3 className={`text-lg font-black ${stats.isAllValid ? "text-green-900" : "text-amber-900"}`}>
-              {stats.isAllValid ? "Pronto para Exportacao" : `Exportacao Liberada com ${stats.blocking} Pendencias`}
+    <section className="grid shrink-0 gap-3 xl:grid-cols-[minmax(0,260px)_minmax(0,1fr)] xl:items-start">
+      <div className="surface-card border-slate-200 p-4">
+        <div className="flex items-start gap-3">
+          <div
+            className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+              hasPendencies ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"
+            }`}
+          >
+            {hasPendencies ? <AlertTriangle className="h-5 w-5" /> : <CheckCircle2 className="h-5 w-5" />}
+          </div>
+
+          <div className="min-w-0">
+            <h3 className="mb-1 text-[15px] font-semibold text-slate-950">
+              {title}
             </h3>
-            <p className="text-sm font-medium text-slate-500">
-              {stats.isAllValid
-                ? "Todos os campos obrigatorios foram preenchidos corretamente."
-                : "Use os botoes de ajuste para padronizar os dados antes de exportar."}
+            <p className="text-[12px] leading-6 text-slate-500">
+              {description}
             </p>
           </div>
         </div>
+      </div>
 
-        <div className="w-full space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 lg:max-w-3xl">
-          <div className="flex flex-col gap-2">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Exibir</p>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => onApplyFilter("all")}
-                className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-                  filterMode === "all"
-                    ? "bg-slate-900 text-white shadow-lg shadow-slate-300"
-                    : "border border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                }`}
-              >
-                Todos os Registros
-              </button>
-              <button
-                onClick={() => onApplyFilter("I")}
-                className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-                  filterMode === "I"
-                    ? "bg-blue-600 text-white shadow-lg shadow-blue-200"
-                    : "border border-blue-100 bg-white text-blue-600 hover:border-blue-300"
-                }`}
-              >
-                Inclusao (I)
-              </button>
-              <button
-                onClick={() => onApplyFilter("A")}
-                className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-                  filterMode === "A"
-                    ? "bg-purple-600 text-white shadow-lg shadow-purple-200"
-                    : "border border-purple-100 bg-white text-purple-600 hover:border-purple-300"
-                }`}
-              >
-                Alteracao (A)
-              </button>
-              <button
-                onClick={() => onApplyFilter("E")}
-                className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-                  filterMode === "E"
-                    ? "bg-red-600 text-white shadow-lg shadow-red-200"
-                    : "border border-red-100 bg-white text-red-600 hover:border-red-300"
-                }`}
-              >
-                Exclusao (E)
-              </button>
-              <button
-                onClick={() => onApplyFilter("invalid")}
-                className={`flex items-center rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-                  filterMode === "invalid" && !errorFieldFilter
-                    ? "bg-amber-600 text-white shadow-lg shadow-amber-200"
-                    : "border border-amber-200 bg-white text-amber-700 hover:border-amber-300"
-                }`}
-              >
-                <AlertTriangle className="mr-1.5 h-3.5 w-3.5" />
-                Pendencias ({stats.invalid})
-              </button>
+      <div className="surface-card p-4">
+        <div className="mb-3">
+          <p className="section-kicker mb-2">Exibir</p>
+          <div className="flex flex-wrap gap-2">
+            {operationFilters.map((option) => {
+              const selected = filterMode === option.mode;
+
+              return (
+                <button
+                  key={option.mode}
+                  onClick={() => onApplyFilter(option.mode)}
+                  className={`rounded-full border px-3 py-1.5 text-[11px] font-medium transition-colors duration-150 ${
+                    selected
+                      ? "border-blue-200 bg-blue-50 text-blue-700"
+                      : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 hover:bg-slate-100"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+
+            <button
+              onClick={() => onApplyFilter("invalid")}
+              className={`rounded-full border px-3 py-1.5 text-[11px] font-medium transition-colors duration-150 ${
+                filterMode === "invalid" && !errorFieldFilter
+                  ? "border-amber-200 bg-amber-50 text-amber-700"
+                  : "border-amber-200 bg-white text-amber-700 hover:bg-amber-50"
+              }`}
+            >
+              Pendencias ({stats.invalid.toLocaleString("pt-BR")})
+            </button>
+          </div>
+        </div>
+
+        {stats.topErrors.length > 0 && (
+          <div>
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="section-kicker">Filtrar por campo com pendencia</p>
+              {errorFieldFilter && (
+                <button
+                  onClick={onClearErrorFieldFilter}
+                  className="text-[11px] font-semibold text-blue-600 transition-colors hover:text-blue-700"
+                >
+                  Limpar filtro
+                </button>
+              )}
+            </div>
+
+            <div className="custom-scrollbar max-h-24 overflow-y-auto pr-1">
+              <div className="flex flex-wrap gap-2">
+                {stats.topErrors.map(([field, count]) => {
+                  const selected = errorFieldFilter === field;
+                  return (
+                    <button
+                      key={field}
+                      onClick={() => onApplyFilter("invalid", field)}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-medium transition-colors duration-150 ${
+                        selected
+                          ? "border-blue-200 bg-blue-50 text-blue-700"
+                          : "border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-white"
+                      }`}
+                    >
+                      <span className="capitalize">{getFieldDisplayName(field)}</span>
+                      <span
+                        className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${
+                          selected ? "bg-blue-100 text-blue-700" : "bg-white text-slate-500"
+                        }`}
+                      >
+                        {count.toLocaleString("pt-BR")}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
-
-          {stats.topErrors.length > 0 && (
-            <div className="border-t border-slate-200 pt-4">
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                  Filtrar por Campo com Pendencia
-                </p>
-                {errorFieldFilter && (
-                  <button
-                    onClick={onClearErrorFieldFilter}
-                    className="text-[10px] font-bold uppercase text-blue-600 hover:underline"
-                  >
-                    Limpar Filtro
-                  </button>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {stats.topErrors.slice(0, 8).map(([field, count]) => (
-                  <button
-                    key={field}
-                    onClick={() => onApplyFilter("invalid", field)}
-                    className={`group flex items-center rounded-xl border px-4 py-2 transition-all ${
-                      errorFieldFilter === field
-                        ? "border-blue-600 bg-blue-600 text-white shadow-md"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-blue-400 hover:bg-blue-50"
-                    }`}
-                  >
-                    <span
-                      className={`text-xs font-bold capitalize ${
-                        errorFieldFilter === field ? "text-white" : "text-slate-700"
-                      }`}
-                    >
-                      {field}
-                    </span>
-                    <span
-                      className={`ml-2.5 rounded-md px-1.5 py-0.5 text-[10px] font-black ${
-                        errorFieldFilter === field
-                          ? "bg-white/20 text-white"
-                          : "bg-slate-100 text-slate-500 group-hover:bg-blue-100 group-hover:text-blue-600"
-                      }`}
-                    >
-                      {count}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+        )}
       </div>
-    </div>
+    </section>
   );
 }

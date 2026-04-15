@@ -36,6 +36,7 @@ Thumbs.db
 *.swp
 *.swo
 *.tsbuildinfo
+.playwright-cli/
 
 # Local reference material and datasets
 archive/

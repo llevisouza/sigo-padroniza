@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, ReactNode, useEffect, useState } from "react";
+import { ChangeEvent, ReactNode, useEffect, useMemo, useState } from "react";
 import { AlertCircle, Save, Wand2, X } from "lucide-react";
 import { Aluno } from "../types/Aluno";
 import { AlunoAdjustment, applyAlunoAdjustments, getAlunoAdjustments } from "../utils/adjustments";
@@ -9,6 +9,33 @@ interface FormAlunoProps {
   onSave: (aluno: Aluno, appliedAdjustments?: AlunoAdjustment[]) => void;
   onClose: () => void;
 }
+
+const sexoOptions = [
+  { value: "M", label: "Masculino" },
+  { value: "F", label: "Feminino" },
+];
+
+const grauOptions = [
+  { value: "1", label: "1o Grau (Fundamental)" },
+  { value: "2", label: "2o Grau (Medio)" },
+  { value: "3", label: "3o Grau (Superior)" },
+];
+
+const turnoOptions = [
+  { value: "1", label: "1 - Matutino" },
+  { value: "2", label: "2 - Vespertino" },
+  { value: "3", label: "3 - Noturno" },
+  { value: "4", label: "4 - Manha/Tarde/Noite" },
+  { value: "5", label: "5 - Manha/Tarde" },
+  { value: "6", label: "6 - Manha/Noite" },
+  { value: "7", label: "7 - Tarde/Noite" },
+];
+
+const flagOptions = [
+  { value: "I", label: "I - Inclusao" },
+  { value: "A", label: "A - Alteracao" },
+  { value: "E", label: "E - Exclusao" },
+];
 
 const baseAluno = (): Aluno => ({
   id: crypto.randomUUID(),
@@ -50,19 +77,21 @@ export function FormAluno({ aluno, onSave, onClose }: FormAlunoProps) {
     setAppliedAdjustments([]);
   }, [aluno]);
 
-  const adjustments = getAlunoAdjustments(formData);
-  const errors = validateAluno(formData, adjustments);
+  const adjustments = useMemo(() => getAlunoAdjustments(formData), [formData]);
+  const errors = useMemo(() => validateAluno(formData, adjustments), [adjustments, formData]);
 
   const getFieldError = (field: keyof Aluno) => errors.find((error) => error.field === field);
 
-  const getInputClass = (field: keyof Aluno) => {
-    const hasError = getFieldError(field);
+  const getInputClass = (field: keyof Aluno, readOnly = false) => {
+    const hasError = Boolean(getFieldError(field));
 
-    return `w-full rounded-xl border px-4 py-2 outline-none transition-all focus:ring-2 focus:ring-blue-500 ${
+    return [
+      "w-full rounded-xl border px-3.5 py-2.5 text-[13px] text-slate-900 outline-none transition-all duration-150",
+      readOnly ? "cursor-not-allowed bg-slate-100 text-slate-500" : "bg-slate-50",
       hasError
-        ? "border-red-500 bg-red-50 text-red-900 placeholder-red-300"
-        : "border-slate-200 bg-slate-50 text-slate-900"
-    }`;
+        ? "border-rose-300 bg-rose-50/60 text-rose-700 focus:border-rose-400 focus:bg-white focus:ring-2 focus:ring-rose-100"
+        : "border-slate-200 focus:border-blue-300 focus:bg-white focus:ring-2 focus:ring-blue-100",
+    ].join(" ");
   };
 
   const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -70,35 +99,57 @@ export function FormAluno({ aluno, onSave, onClose }: FormAlunoProps) {
     setFormData((previous) => ({ ...previous, [name]: value }));
   };
 
-  const handleSubmit = (event: FormEvent) => {
-    event.preventDefault();
-    onSave(formData, appliedAdjustments);
-  };
-
   const handleApplyAdjustments = () => {
+    if (adjustments.length === 0) {
+      return;
+    }
+
     setFormData((previous) => applyAlunoAdjustments(previous, adjustments));
     setAppliedAdjustments((previous) => previous.concat(adjustments));
   };
 
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    onSave(formData, appliedAdjustments);
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-      <div className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-6 py-4">
-          <h2 className="text-xl font-bold text-slate-800">{aluno ? "Editar Aluno" : "Novo Aluno"}</h2>
-          <button onClick={onClose} className="rounded-full p-2 transition-colors hover:bg-slate-200">
-            <X className="h-6 w-6 text-slate-500" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-sm">
+      <form
+        onSubmit={handleSubmit}
+        className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_28px_70px_rgba(15,23,42,0.18)]"
+      >
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-6 py-5">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight text-slate-950">{aluno ? "Editar Aluno" : "Novo Aluno"}</h2>
+            <p className="mt-1 text-[13px] text-slate-500">Revise os dados por secao antes de salvar.</p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl p-2 text-slate-400 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-900"
+          >
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            <div className="md:col-span-3">
-              <SectionHeading title="Identificação" />
+        <div className="custom-scrollbar flex-1 overflow-y-auto px-6 py-6">
+          <div className="space-y-7">
+            <FormSection title="Identificacao">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-                <Field label="Ano Vigência *">
-                  <input name="ano" value={formData.ano} onChange={handleChange} required placeholder="2026" className={getInputClass("ano")} />
+                <Field label="Ano Vigencia *" error={getFieldError("ano")?.message}>
+                  <input
+                    name="ano"
+                    value={formData.ano}
+                    onChange={handleChange}
+                    required
+                    placeholder="2026"
+                    className={getInputClass("ano")}
+                  />
                 </Field>
-                <Field label="Código SETPS">
+
+                <Field label="Codigo SETPS" error={getFieldError("codigoSetps")?.message}>
                   <input
                     name="codigoSetps"
                     value={formData.codigoSetps}
@@ -107,23 +158,29 @@ export function FormAluno({ aluno, onSave, onClose }: FormAlunoProps) {
                     className={getInputClass("codigoSetps")}
                   />
                 </Field>
-                <Field label="Nome Completo *" className="md:col-span-2">
+
+                <Field label="Nome Completo *" className="md:col-span-2" error={getFieldError("nome")?.message}>
                   <input
                     name="nome"
                     value={formData.nome}
                     onChange={handleChange}
                     required
-                    placeholder="JOÃO DA SILVA"
+                    placeholder="JOAO DA SILVA"
                     className={getInputClass("nome")}
                   />
                 </Field>
-                <Field label="Sexo">
+
+                <Field label="Sexo" error={getFieldError("sexo")?.message}>
                   <select name="sexo" value={formData.sexo} onChange={handleChange} className={getInputClass("sexo")}>
-                    <option value="M">Masculino</option>
-                    <option value="F">Feminino</option>
+                    {sexoOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                 </Field>
-                <Field label="Nascimento *">
+
+                <Field label="Nascimento *" error={getFieldError("dataNascimento")?.message}>
                   <input
                     name="dataNascimento"
                     value={formData.dataNascimento}
@@ -132,10 +189,18 @@ export function FormAluno({ aluno, onSave, onClose }: FormAlunoProps) {
                     className={getInputClass("dataNascimento")}
                   />
                 </Field>
-                <Field label="CPF">
-                  <input name="cpf" value={formData.cpf} onChange={handleChange} placeholder="12345678901" className={getInputClass("cpf")} />
+
+                <Field label="CPF" error={getFieldError("cpf")?.message}>
+                  <input
+                    name="cpf"
+                    value={formData.cpf}
+                    onChange={handleChange}
+                    placeholder="12345678901"
+                    className={getInputClass("cpf")}
+                  />
                 </Field>
-                <Field label="Matrícula *">
+
+                <Field label="Matricula *" error={getFieldError("matricula")?.message}>
                   <input
                     name="matricula"
                     value={formData.matricula}
@@ -146,15 +211,15 @@ export function FormAluno({ aluno, onSave, onClose }: FormAlunoProps) {
                   />
                 </Field>
               </div>
-            </div>
+            </FormSection>
 
-            <div className="md:col-span-3">
-              <SectionHeading title="Documentação (RG ou Certidão)" />
+            <FormSection title="Documentacao">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <Field label="RG">
+                <Field label="RG" error={getFieldError("rg")?.message}>
                   <input name="rg" value={formData.rg} onChange={handleChange} placeholder="1234567890" className={getInputClass("rg")} />
                 </Field>
-                <Field label="Órgão Expedidor">
+
+                <Field label="Orgao Expedidor" error={getFieldError("orgaoExpedidor")?.message}>
                   <input
                     name="orgaoExpedidor"
                     value={formData.orgaoExpedidor}
@@ -163,7 +228,8 @@ export function FormAluno({ aluno, onSave, onClose }: FormAlunoProps) {
                     className={getInputClass("orgaoExpedidor")}
                   />
                 </Field>
-                <Field label="Emissão RG">
+
+                <Field label="Emissao RG" error={getFieldError("dataEmissaoRg")?.message}>
                   <input
                     name="dataEmissaoRg"
                     value={formData.dataEmissaoRg}
@@ -172,7 +238,8 @@ export function FormAluno({ aluno, onSave, onClose }: FormAlunoProps) {
                     className={getInputClass("dataEmissaoRg")}
                   />
                 </Field>
-                <Field label="Certidão Nasc.">
+
+                <Field label="Certidao Nasc." error={getFieldError("certidao")?.message}>
                   <input
                     name="certidao"
                     value={formData.certidao}
@@ -181,19 +248,20 @@ export function FormAluno({ aluno, onSave, onClose }: FormAlunoProps) {
                     className={getInputClass("certidao")}
                   />
                 </Field>
-                <Field label="Livro">
+
+                <Field label="Livro" error={getFieldError("livro")?.message}>
                   <input name="livro" value={formData.livro} onChange={handleChange} placeholder="001A" className={getInputClass("livro")} />
                 </Field>
-                <Field label="Folha">
+
+                <Field label="Folha" error={getFieldError("folha")?.message}>
                   <input name="folha" value={formData.folha} onChange={handleChange} placeholder="00234" className={getInputClass("folha")} />
                 </Field>
               </div>
-            </div>
+            </FormSection>
 
-            <div className="md:col-span-3">
-              <SectionHeading title="Dados Escolares" />
+            <FormSection title="Dados Escolares">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-                <Field label="Cód. Escola *">
+                <Field label="Cod. Escola *" error={getFieldError("codigoEscola")?.message}>
                   <input
                     name="codigoEscola"
                     value={formData.codigoEscola}
@@ -203,34 +271,36 @@ export function FormAluno({ aluno, onSave, onClose }: FormAlunoProps) {
                     className={getInputClass("codigoEscola")}
                   />
                 </Field>
-                <Field label="Grau *">
+
+                <Field label="Grau *" error={getFieldError("grau")?.message}>
                   <select name="grau" value={formData.grau} onChange={handleChange} className={getInputClass("grau")}>
-                    <option value="1">1º Grau (Fundamental)</option>
-                    <option value="2">2º Grau (Médio)</option>
-                    <option value="3">3º Grau (Superior)</option>
+                    {grauOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                 </Field>
-                <Field label="Série *">
+
+                <Field label="Serie *" error={getFieldError("serie")?.message}>
                   <input name="serie" value={formData.serie} onChange={handleChange} placeholder="01, 02..." className={getInputClass("serie")} />
                 </Field>
-                <Field label="Turno *">
+
+                <Field label="Turno *" error={getFieldError("turno")?.message}>
                   <select name="turno" value={formData.turno} onChange={handleChange} className={getInputClass("turno")}>
-                    <option value="1">1-Matutino</option>
-                    <option value="2">2-Vespertino</option>
-                    <option value="3">3-Noturno</option>
-                    <option value="4">4-Manhã/Tarde/Noite</option>
-                    <option value="5">5-Manhã/Tarde</option>
-                    <option value="6">6-Manhã/Noite</option>
-                    <option value="7">7-Tarde/Noite</option>
+                    {turnoOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                 </Field>
               </div>
-            </div>
+            </FormSection>
 
-            <div className="md:col-span-3">
-              <SectionHeading title="Endereço e Contato" />
+            <FormSection title="Endereco e Contato">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <Field label="Logradouro *" className="md:col-span-2">
+                <Field label="Logradouro *" className="md:col-span-2" error={getFieldError("endereco")?.message}>
                   <input
                     name="endereco"
                     value={formData.endereco}
@@ -239,23 +309,47 @@ export function FormAluno({ aluno, onSave, onClose }: FormAlunoProps) {
                     className={getInputClass("endereco")}
                   />
                 </Field>
-                <Field label="Número *">
+
+                <Field label="Numero *" error={getFieldError("numero")?.message}>
                   <input name="numero" value={formData.numero} onChange={handleChange} placeholder="123" className={getInputClass("numero")} />
                 </Field>
-                <Field label="Bairro *">
+
+                <Field label="Complemento" error={getFieldError("complemento")?.message}>
+                  <input
+                    name="complemento"
+                    value={formData.complemento}
+                    onChange={handleChange}
+                    placeholder="APTO 101"
+                    className={getInputClass("complemento")}
+                  />
+                </Field>
+
+                <Field label="Bairro *" error={getFieldError("bairro")?.message}>
                   <input name="bairro" value={formData.bairro} onChange={handleChange} placeholder="CENTRO" className={getInputClass("bairro")} />
                 </Field>
-                <Field label="CEP *">
-                  <input name="cep" value={formData.cep} onChange={handleChange} required placeholder="40000000" className={getInputClass("cep")} />
+
+                <Field label="CEP *" error={getFieldError("cep")?.message}>
+                  <input
+                    name="cep"
+                    value={formData.cep}
+                    onChange={handleChange}
+                    required
+                    placeholder="40000000"
+                    className={getInputClass("cep")}
+                  />
                 </Field>
-                <Field label="Operação (Flag) *">
+
+                <Field label="Operacao (Flag) *" error={getFieldError("flag")?.message}>
                   <select name="flag" value={formData.flag} onChange={handleChange} className={getInputClass("flag")}>
-                    <option value="I">I - Inclusão</option>
-                    <option value="A">A - Alteração</option>
-                    <option value="E">E - Exclusão</option>
+                    {flagOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                 </Field>
-                <Field label="Telefone">
+
+                <Field label="Telefone" error={getFieldError("telefone")?.message}>
                   <input
                     name="telefone"
                     value={formData.telefone}
@@ -264,7 +358,8 @@ export function FormAluno({ aluno, onSave, onClose }: FormAlunoProps) {
                     className={getInputClass("telefone")}
                   />
                 </Field>
-                <Field label="Email" className="md:col-span-2">
+
+                <Field label="Email" className="md:col-span-2" error={getFieldError("email")?.message}>
                   <input
                     name="email"
                     value={formData.email}
@@ -274,12 +369,11 @@ export function FormAluno({ aluno, onSave, onClose }: FormAlunoProps) {
                   />
                 </Field>
               </div>
-            </div>
+            </FormSection>
 
-            <div className="md:col-span-3">
-              <SectionHeading title="Filiação" />
+            <FormSection title="Filiacao">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <Field label="Nome da Mãe *">
+                <Field label="Nome da Mae *" error={getFieldError("nomeMae")?.message}>
                   <input
                     name="nomeMae"
                     value={formData.nomeMae}
@@ -289,7 +383,8 @@ export function FormAluno({ aluno, onSave, onClose }: FormAlunoProps) {
                     className={getInputClass("nomeMae")}
                   />
                 </Field>
-                <Field label="Nome do Pai">
+
+                <Field label="Nome do Pai" error={getFieldError("nomePai")?.message}>
                   <input
                     name="nomePai"
                     value={formData.nomePai}
@@ -299,85 +394,98 @@ export function FormAluno({ aluno, onSave, onClose }: FormAlunoProps) {
                   />
                 </Field>
               </div>
-            </div>
-          </div>
+            </FormSection>
 
-          {adjustments.length > 0 && (
-            <div className="mt-8 flex items-start justify-between gap-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-              <div className="flex items-start">
-                <Wand2 className="mr-3 mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-600" />
-                <div>
-                  <p className="mb-1 text-sm font-bold text-emerald-800">Ajustes sugeridos disponíveis</p>
-                  <p className="text-xs text-emerald-700">
-                    {adjustments.length} campo(s) podem ser padronizados com um clique antes de salvar.
-                  </p>
+            {adjustments.length > 0 && (
+              <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-start gap-3">
+                  <Wand2 className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
+                  <div>
+                    <p className="text-[13px] font-semibold text-slate-950">Ajustes sugeridos disponiveis</p>
+                    <p className="mt-1 text-[12px] leading-relaxed text-slate-500">
+                      {adjustments.length} campo(s) podem ser padronizados com um clique antes de salvar.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleApplyAdjustments}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[13px] font-medium text-slate-700 shadow-sm transition-colors duration-150 hover:bg-slate-100 hover:text-slate-950"
+                >
+                  <Wand2 className="h-4 w-4" />
+                  Aplicar Ajustes
+                </button>
+              </div>
+            )}
+
+            {errors.length > 0 && (
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-rose-600" />
+                  <div>
+                    <p className="text-[13px] font-semibold text-rose-900">Existem erros de validacao neste registro.</p>
+                    <ul className="mt-2 list-disc space-y-1 pl-4 text-[12px] leading-relaxed text-rose-700">
+                      {errors.map((error, index) => (
+                        <li key={`${error.field}-${index}`}>{error.message}</li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={handleApplyAdjustments}
-                className="inline-flex items-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-emerald-700"
-              >
-                <Wand2 className="mr-2 h-4 w-4" />
-                Aplicar Ajustes
-              </button>
-            </div>
-          )}
+            )}
+          </div>
+        </div>
 
-          {errors.length > 0 && (
-            <div className="mt-8 flex items-start rounded-xl border border-amber-200 bg-amber-50 p-4">
-              <AlertCircle className="mr-3 mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
-              <div>
-                <p className="mb-1 text-sm font-bold text-amber-800">Atenção: Existem erros de validação</p>
-                <ul className="list-inside list-disc text-xs text-amber-700">
-                  {errors.map((error, index) => (
-                    <li key={`${error.field}-${index}`}>{error.message}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          )}
-        </form>
-
-        <div className="flex items-center justify-end space-x-4 border-t border-slate-200 bg-slate-50 px-6 py-4">
+        <div className="sticky bottom-0 z-10 flex items-center justify-end gap-3 border-t border-slate-200 bg-white px-6 py-4">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl px-6 py-2 font-bold text-slate-600 transition-all hover:bg-slate-200"
+            className="rounded-xl px-4 py-2 text-[13px] font-medium text-slate-600 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-950"
           >
             Cancelar
           </button>
+
           <button
             type="submit"
-            onClick={handleSubmit}
-            className="flex items-center rounded-xl bg-blue-600 px-8 py-2 font-bold text-white shadow-lg shadow-blue-200 transition-all hover:bg-blue-700 hover:shadow-blue-300"
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-[13px] font-medium text-white shadow-sm transition-all duration-150 hover:bg-blue-700 hover:shadow-md"
           >
-            <Save className="mr-2 h-5 w-5" />
+            <Save className="h-4 w-4" />
             Salvar Registro
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
 
-function SectionHeading({ title }: { title: string }) {
-  return <h3 className="mb-4 border-b border-blue-100 pb-1 text-sm font-bold uppercase tracking-wider text-blue-600">{title}</h3>;
+function FormSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h3 className="mb-4 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+        {title}
+      </h3>
+      {children}
+    </section>
+  );
 }
 
 function Field({
   label,
   children,
   className = "",
+  error,
 }: {
   label: string;
   children: ReactNode;
   className?: string;
+  error?: string;
 }) {
   return (
     <div className={className}>
-      <label className="mb-1 block text-[10px] font-black uppercase text-slate-400">{label}</label>
+      <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">{label}</label>
       {children}
+      {error && <p className="mt-1 text-[11px] text-rose-600">{error}</p>}
     </div>
   );
 }

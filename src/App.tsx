@@ -1,4 +1,3 @@
-import { AnimatePresence } from "motion/react";
 import { FormAluno } from "./components/FormAluno";
 import { AppHeader } from "./components/AppHeader";
 import { DashboardSidebar } from "./components/DashboardSidebar";
@@ -6,15 +5,17 @@ import { ExportModal } from "./components/ExportModal";
 import { NotificationToast } from "./components/NotificationToast";
 import { ValidationBanner } from "./components/ValidationBanner";
 import { WorkspaceView } from "./components/WorkspaceView";
+import { WorkspaceStatsBar } from "./components/WorkspaceStatsBar";
 import { useAlunoWorkspace } from "./hooks/useAlunoWorkspace";
 
 export default function App() {
   const workspace = useAlunoWorkspace();
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+    <div className="flex h-screen flex-col bg-slate-50 font-sans text-slate-900">
       <AppHeader
         alunosCount={workspace.alunos.length}
+        isBusy={workspace.isPending}
         onExport={workspace.handleExport}
         searchField={workspace.searchField}
         searchTerm={workspace.searchTerm}
@@ -22,26 +23,29 @@ export default function App() {
         onSearchTermChange={workspace.setSearchTermAndReset}
       />
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <ValidationBanner
-          visible={workspace.alunos.length > 0}
-          stats={workspace.stats}
-          filterMode={workspace.filterMode}
-          errorFieldFilter={workspace.errorFieldFilter}
-          onApplyFilter={workspace.applyFilter}
-          onClearErrorFieldFilter={workspace.clearErrorFieldFilter}
+      <main className="mx-auto grid flex-1 min-h-0 w-full max-w-[1600px] grid-cols-1 gap-4 overflow-y-auto px-4 py-4 sm:px-6 xl:h-[calc(100vh-4rem)] xl:grid-cols-[248px_minmax(0,1fr)] xl:overflow-hidden xl:px-8">
+        <DashboardSidebar
+          onUpload={workspace.handleUpload}
+          onUploadError={(message) => workspace.showNotification("error", message)}
         />
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-          <DashboardSidebar
+        <div className="flex min-h-0 flex-col gap-4 overflow-hidden">
+          {workspace.alunos.length > 0 && <WorkspaceStatsBar stats={workspace.stats} />}
+
+          <ValidationBanner
+            visible={workspace.alunos.length > 0}
             stats={workspace.stats}
-            onUpload={workspace.handleUpload}
-            onUploadError={(message) => workspace.showNotification("error", message)}
+            filterMode={workspace.filterMode}
+            errorFieldFilter={workspace.errorFieldFilter}
+            onApplyFilter={workspace.applyFilter}
+            onClearErrorFieldFilter={workspace.clearErrorFieldFilter}
           />
 
           <WorkspaceView
             activeTab={workspace.activeTab}
             filterMode={workspace.filterMode}
+            preferredAdjustmentField={workspace.preferredAdjustmentField}
+            adjustAllLabel={workspace.batchAdjustLabel}
             exportReport={workspace.exportReport}
             hasReportContent={workspace.hasReportContent}
             alunos={workspace.alunos}
@@ -51,6 +55,7 @@ export default function App() {
             currentPage={workspace.currentPage}
             totalPages={workspace.totalPages}
             pageSize={workspace.pageSize}
+            isBusy={workspace.isPending}
             onTabChange={workspace.setActiveTab}
             onClearData={workspace.handleClearImportedData}
             onAdjustAll={workspace.handleAdjustAll}
@@ -60,7 +65,7 @@ export default function App() {
             onAdjustAluno={workspace.handleAdjustAluno}
             onMainPageChange={workspace.setCurrentPage}
             onMainPageSizeChange={workspace.setMainPageSize}
-            statsAdjustableFields={workspace.stats.adjustableFields}
+            statsAdjustableFields={workspace.filteredAdjustableFields}
             adjustmentHistory={workspace.adjustmentHistory}
             paginatedAdjustmentHistory={workspace.paginatedAdjustmentHistory}
             historyCurrentPage={workspace.historyCurrentPage}
@@ -82,24 +87,22 @@ export default function App() {
         </div>
       </main>
 
-      <AnimatePresence mode="wait">
-        {workspace.isFormOpen && (
-          <FormAluno
-            key="aluno-form-modal"
-            aluno={workspace.editingAluno}
-            onSave={workspace.handleSaveAluno}
-            onClose={workspace.closeForm}
-          />
-        )}
-
-        <ExportModal
-          open={workspace.isExportModalOpen}
-          onClose={workspace.closeExportModal}
-          onConfirm={workspace.handleConfirmExport}
+      {workspace.isFormOpen && (
+        <FormAluno
+          aluno={workspace.editingAluno}
+          onSave={workspace.handleSaveAluno}
+          onClose={workspace.closeForm}
         />
+      )}
 
-        <NotificationToast notification={workspace.notification} onClose={workspace.dismissNotification} />
-      </AnimatePresence>
+      <ExportModal
+        open={workspace.isExportModalOpen}
+        onClose={workspace.closeExportModal}
+        onConfirm={workspace.handleConfirmExport}
+        initialInstitutionCode={workspace.initialInstitutionCode}
+      />
+
+      <NotificationToast notification={workspace.notification} onClose={workspace.dismissNotification} />
     </div>
   );
 }

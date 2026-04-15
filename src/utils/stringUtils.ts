@@ -75,6 +75,26 @@ export function onlyDigits(str: string | undefined): string {
   return str.replace(/\D/g, "");
 }
 
+export function isValidCPF(str: string | undefined): boolean {
+  const digits = onlyDigits(str);
+
+  if (digits.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(digits)) return false;
+
+  const calculateDigit = (baseLength: number) => {
+    let sum = 0;
+
+    for (let index = 0; index < baseLength; index += 1) {
+      sum += Number(digits[index]) * (baseLength + 1 - index);
+    }
+
+    const remainder = (sum * 10) % 11;
+    return remainder === 10 ? 0 : remainder;
+  };
+
+  return calculateDigit(9) === Number(digits[9]) && calculateDigit(10) === Number(digits[10]);
+}
+
 export function normalizeEmail(str: string | undefined): string {
   if (!str) return "";
   return str

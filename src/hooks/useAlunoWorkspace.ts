@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Aluno } from "../types/Aluno";
+import { ExportConfig } from "../types/Export";
 import { AlunoInsight } from "../types/AlunoInsight";
 import { AdjustmentHistoryEntry } from "../types/AdjustmentHistory";
 import { AppStats, FilterMode, NotificationState, NotificationType, SearchField, TabKey } from "../types/AppUi";
@@ -9,9 +10,16 @@ import {
   canRevertAdjustment,
   getAdjustmentHistoryStats,
 } from "../utils/adjustmentHistory";
-import { ExportFlag, ExportReport, prepareAlunosForExport } from "../utils/exportPreparation";
+import { ExportReport, prepareAlunosForExport } from "../utils/exportPreparation";
+import {
+  getBatchAdjustmentLabel,
+  getFieldDisplayName,
+  getScopedAdjustments,
+  getScopedErrorFields,
+} from "../utils/adjustmentPresentation";
 import { exportarTXT } from "../utils/generator";
 import { paginateItems } from "../utils/pagination";
+import { onlyDigits } from "../utils/stringUtils";
 import { validateAluno } from "../utils/validator";
 
 const NOTIFICATION_TIMEOUT_MS = 5000;
@@ -35,7 +43,9 @@ export function useAlunoWorkspace() {
   const [errorFieldFilter, setErrorFieldFilter] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchField, setSearchField] = useState<SearchField>("all");
+  const [isPending, startTransition] = useTransition();
   const notificationTimeoutRef = useRef<number | null>(null);
+  const deferredSearchTerm = useDeferredValue(searchTerm);
 
   useEffect(() => {
     return () => {
@@ -77,9 +87,11 @@ export function useAlunoWorkspace() {
 
   const handleUpload = useCallback(
     (novosAlunos: Aluno[], importErrors: string[]) => {
-      setAlunos((previous) => previous.concat(novosAlunos));
-      setCurrentPage(1);
-      setActiveTab("arquivo");
+      startTransition(() => {
+        setAlunos((previous) => previous.concat(novosAlunos));
+        setCurrentPage(1);
+        setActiveTab("arquivo");
+      });
 
       if (importErrors.length > 0) {
         showNotification(
@@ -91,7 +103,7 @@ export function useAlunoWorkspace() {
 
       showNotification("success", `${novosAlunos.length} registro(s) importado(s) com sucesso.`);
     },
-    [showNotification]
+    [showNotification, startTransition]
   );
 
   const handleAddAluno = useCallback(() => {
@@ -110,14 +122,33 @@ export function useAlunoWorkspace() {
         return;
       }
 
-      setAlunos((previous) => previous.filter((aluno) => aluno.id !== id));
+      startTransition(() => {
+        setAlunos((previous) => previous.filter((aluno) => aluno.id !== id));
+      });
       showNotification("info", "Registro removido da base atual.");
     },
-    [showNotification]
+    [showNotification, startTransition]
   );
 
-  const { insightsById, stats } = useMemo(() => {
+  const { insightsById, searchIndexById, filterIndex, stats } = useMemo(() => {
     const map = new Map<string, AlunoInsight>();
+    const searchIndex = new Map<string, Record<SearchField, string>>();
+    const alunosPorFlag = {
+      all: [] as Aluno[],
+      invalid: [] as Aluno[],
+      I: [] as Aluno[],
+      A: [] as Aluno[],
+      E: [] as Aluno[],
+    };
+    const adjustableRecordsByFlag = {
+      all: 0,
+      invalid: 0,
+      I: 0,
+      A: 0,
+      E: 0,
+    };
+    const invalidByField = new Map<string, Aluno[]>();
+    const adjustableRecordsByInvalidField = new Map<string, number>();
     const fieldErrors: Record<string, number> = {};
     let invalidCount = 0;
     let blockingCount = 0;
@@ -125,27 +156,70 @@ export function useAlunoWorkspace() {
     let adjustableFields = 0;
 
     for (const aluno of alunos) {
+      alunosPorFlag.all.push(aluno);
+      alunosPorFlag[aluno.flag].push(aluno);
+
       const adjustments = getAlunoAdjustments(aluno);
+      const adjustmentFields = new Set(adjustments.map((adjustment) => adjustment.field));
       const errors = validateAluno(aluno, adjustments);
       const blockingErrors = errors.filter((error) => error.severity === "error");
       const warnings = errors.filter((error) => error.severity === "warning");
 
       map.set(aluno.id, { adjustments, errors, blockingErrors, warnings });
+      searchIndex.set(aluno.id, {
+        all: [
+          aluno.nome,
+          aluno.matricula,
+          aluno.cpf || "",
+          aluno.rg || "",
+          aluno.nomeMae,
+          aluno.nomePai || "",
+        ]
+          .join(" ")
+          .toLowerCase(),
+        nome: aluno.nome.toLowerCase(),
+        matricula: aluno.matricula.toLowerCase(),
+        cpf: (aluno.cpf || "").toLowerCase(),
+        rg: (aluno.rg || "").toLowerCase(),
+        nomeMae: aluno.nomeMae.toLowerCase(),
+      });
 
       if (adjustments.length > 0) {
         adjustableRecords++;
         adjustableFields += adjustments.length;
+        adjustableRecordsByFlag.all++;
+        adjustableRecordsByFlag[aluno.flag]++;
       }
 
       if (errors.length > 0) {
         invalidCount++;
+        alunosPorFlag.invalid.push(aluno);
+        if (adjustments.length > 0) {
+          adjustableRecordsByFlag.invalid++;
+        }
       }
 
+      const seenFields = new Set<keyof Aluno>();
       for (const error of errors) {
         if (error.severity === "error") {
           blockingCount++;
         }
         fieldErrors[error.field] = (fieldErrors[error.field] || 0) + 1;
+
+        if (!seenFields.has(error.field)) {
+          const alunosForField = invalidByField.get(error.field) ?? [];
+          alunosForField.push(aluno);
+          invalidByField.set(error.field, alunosForField);
+          seenFields.add(error.field);
+        }
+      }
+
+      for (const field of seenFields) {
+        if (!adjustmentFields.has(field)) {
+          continue;
+        }
+
+        adjustableRecordsByInvalidField.set(field, (adjustableRecordsByInvalidField.get(field) ?? 0) + 1);
       }
     }
 
@@ -160,50 +234,46 @@ export function useAlunoWorkspace() {
       topErrors: Object.entries(fieldErrors).sort((left, right) => right[1] - left[1]),
     };
 
-    return { insightsById: map, stats: computedStats };
+    return {
+      insightsById: map,
+      searchIndexById: searchIndex,
+      filterIndex: {
+        alunosPorFlag,
+        invalidByField,
+        adjustableRecordsByFlag,
+        adjustableRecordsByInvalidField,
+      },
+      stats: computedStats,
+    };
   }, [alunos]);
 
   const filteredAlunos = useMemo(() => {
-    let result = alunos;
+    let result: Aluno[];
 
     if (filterMode === "invalid") {
-      result = result.filter((aluno) => {
-        const insight = insightsById.get(aluno.id);
-        if (!insight || insight.errors.length === 0) {
-          return false;
-        }
-
-        if (errorFieldFilter) {
-          return insight.errors.some((error) => error.field === errorFieldFilter);
-        }
-
-        return true;
-      });
-    } else if (filterMode !== "all") {
-      result = result.filter((aluno) => aluno.flag === filterMode);
+      result = errorFieldFilter
+        ? filterIndex.invalidByField.get(errorFieldFilter) ?? []
+        : filterIndex.alunosPorFlag.invalid;
+    } else if (filterMode === "all") {
+      result = filterIndex.alunosPorFlag.all;
+    } else {
+      result = filterIndex.alunosPorFlag[filterMode];
     }
 
-    if (!searchTerm.trim()) {
+    if (!deferredSearchTerm.trim()) {
       return result;
     }
 
-    const term = searchTerm.toLowerCase();
+    const term = deferredSearchTerm.toLowerCase();
     return result.filter((aluno) => {
-      if (searchField === "all") {
-        return (
-          aluno.nome.toLowerCase().includes(term) ||
-          aluno.matricula.toLowerCase().includes(term) ||
-          (aluno.cpf && aluno.cpf.includes(term)) ||
-          (aluno.rg && aluno.rg.toLowerCase().includes(term)) ||
-          aluno.nomeMae.toLowerCase().includes(term) ||
-          (aluno.nomePai && aluno.nomePai.toLowerCase().includes(term))
-        );
+      const index = searchIndexById.get(aluno.id);
+      if (!index) {
+        return false;
       }
 
-      const value = aluno[searchField] || "";
-      return value.toLowerCase().includes(term);
+      return index[searchField].includes(term);
     });
-  }, [alunos, errorFieldFilter, filterMode, insightsById, searchField, searchTerm]);
+  }, [deferredSearchTerm, errorFieldFilter, filterIndex, filterMode, searchField, searchIndexById]);
 
   const alunosPage = useMemo(
     () => paginateItems(filteredAlunos, currentPage, pageSize),
@@ -240,103 +310,164 @@ export function useAlunoWorkspace() {
 
   const alunosById = useMemo(() => new Map(alunos.map((aluno) => [aluno.id, aluno])), [alunos]);
   const historyStats = useMemo(() => getAdjustmentHistoryStats(adjustmentHistory), [adjustmentHistory]);
+  const initialInstitutionCode = useMemo(() => onlyDigits(alunos[0]?.codigoEscola), [alunos]);
+  const preferredAdjustmentField = errorFieldFilter;
+  const filteredAdjustableRecords = useMemo(() => {
+    if (filterMode === "invalid") {
+      return preferredAdjustmentField
+        ? filterIndex.adjustableRecordsByInvalidField.get(preferredAdjustmentField) ?? 0
+        : filterIndex.adjustableRecordsByFlag.invalid;
+    }
+
+    if (filterMode === "all") {
+      return filterIndex.adjustableRecordsByFlag.all;
+    }
+
+    return filterIndex.adjustableRecordsByFlag[filterMode];
+  }, [filterIndex, filterMode, preferredAdjustmentField]);
+  const batchAdjustLabel = useMemo(
+    () => getBatchAdjustmentLabel(preferredAdjustmentField, filteredAdjustableRecords, filteredAlunos.length),
+    [filteredAdjustableRecords, filteredAlunos.length, preferredAdjustmentField]
+  );
 
   const setSearchFieldAndReset = useCallback((field: SearchField) => {
-    setSearchField(field);
-    setCurrentPage(1);
-  }, []);
+    startTransition(() => {
+      setSearchField(field);
+      setCurrentPage(1);
+    });
+  }, [startTransition]);
 
   const setSearchTermAndReset = useCallback((term: string) => {
-    setSearchTerm(term);
-    setCurrentPage(1);
-  }, []);
+    startTransition(() => {
+      setSearchTerm(term);
+      setCurrentPage(1);
+    });
+  }, [startTransition]);
 
   const applyFilter = useCallback((mode: FilterMode, field?: string | null) => {
-    setFilterMode(mode);
-    setErrorFieldFilter(field ?? null);
-    setCurrentPage(1);
-  }, []);
+    startTransition(() => {
+      setFilterMode(mode);
+      setErrorFieldFilter(field ?? null);
+      setCurrentPage(1);
+    });
+  }, [startTransition]);
 
   const clearErrorFieldFilter = useCallback(() => {
-    setErrorFieldFilter(null);
-    setCurrentPage(1);
-  }, []);
+    startTransition(() => {
+      setErrorFieldFilter(null);
+      setCurrentPage(1);
+    });
+  }, [startTransition]);
 
   const setMainPageSize = useCallback((size: number) => {
-    setPageSize(size);
-    setCurrentPage(1);
-  }, []);
+    startTransition(() => {
+      setPageSize(size);
+      setCurrentPage(1);
+    });
+  }, [startTransition]);
 
   const setHistoryPageSizeAndReset = useCallback((size: number) => {
-    setHistoryPageSize(size);
-    setHistoryCurrentPage(1);
-  }, []);
+    startTransition(() => {
+      setHistoryPageSize(size);
+      setHistoryCurrentPage(1);
+    });
+  }, [startTransition]);
 
   const setIssuesPageSizeAndReset = useCallback((size: number) => {
-    setIssuesPageSize(size);
-    setIssuesCurrentPage(1);
-  }, []);
+    startTransition(() => {
+      setIssuesPageSize(size);
+      setIssuesCurrentPage(1);
+    });
+  }, [startTransition]);
 
   const handleAdjustAluno = useCallback(
-    (aluno: Aluno) => {
-      const adjustments = insightsById.get(aluno.id)?.adjustments ?? getAlunoAdjustments(aluno);
+    (aluno: Aluno, preferredField?: string | null) => {
+      const insight = insightsById.get(aluno.id);
+      const adjustments = insight?.adjustments ?? getAlunoAdjustments(aluno);
+      const errors = insight?.errors ?? validateAluno(aluno, adjustments);
+      const scopedAdjustments = getScopedAdjustments(adjustments, preferredField);
+      const scopedErrorFields = getScopedErrorFields(errors, preferredField);
 
-      if (adjustments.length === 0) {
-        showNotification("info", "Esse registro ja esta padronizado.");
+      if (scopedAdjustments.length === 0) {
+        if (scopedErrorFields.length > 0) {
+          setEditingAluno(aluno);
+          setIsFormOpen(true);
+          showNotification(
+            "info",
+            preferredField
+              ? `${getFieldDisplayName(preferredField)} exige revisao manual neste registro.`
+              : "Esse registro exige revisao manual."
+          );
+          return;
+        }
+
+        showNotification("info", "Esse registro ja esta padronizado para a pendencia selecionada.");
         return;
       }
 
       setAlunos((previous) =>
-        previous.map((item) => (item.id === aluno.id ? applyAlunoAdjustments(item, adjustments) : item))
+        previous.map((item) => (item.id === aluno.id ? applyAlunoAdjustments(item, scopedAdjustments) : item))
       );
-      recordAdjustments(buildAdjustmentHistoryEntries(aluno, adjustments, "registro"));
-      showNotification("success", `${adjustments.length} ajuste(s) aplicado(s) em ${aluno.matricula || aluno.nome}.`);
+      recordAdjustments(buildAdjustmentHistoryEntries(aluno, scopedAdjustments, "registro"));
+      showNotification(
+        "success",
+        `${scopedAdjustments.length} ajuste(s) aplicado(s) em ${aluno.matricula || aluno.nome}.`
+      );
     },
     [insightsById, recordAdjustments, showNotification]
   );
 
-  const handleAdjustAll = useCallback(() => {
+  const handleAdjustAll = useCallback((preferredField?: string | null) => {
+    const updatedById = new Map<string, Aluno>();
     let affectedRecords = 0;
     let appliedFields = 0;
     const historyEntries: AdjustmentHistoryEntry[] = [];
 
-    setAlunos((previous) =>
-      previous.map((aluno) => {
-        const adjustments = insightsById.get(aluno.id)?.adjustments ?? getAlunoAdjustments(aluno);
-        if (adjustments.length === 0) {
-          return aluno;
-        }
+    for (const aluno of filteredAlunos) {
+      const adjustments = insightsById.get(aluno.id)?.adjustments ?? getAlunoAdjustments(aluno);
+      const scopedAdjustments = getScopedAdjustments(adjustments, preferredField);
 
-        affectedRecords++;
-        appliedFields += adjustments.length;
-        historyEntries.push(...buildAdjustmentHistoryEntries(aluno, adjustments, "lote"));
-        return applyAlunoAdjustments(aluno, adjustments);
-      })
-    );
+      if (scopedAdjustments.length === 0) {
+        continue;
+      }
+
+      const updatedAluno = applyAlunoAdjustments(aluno, scopedAdjustments);
+      updatedById.set(aluno.id, updatedAluno);
+      affectedRecords++;
+      appliedFields += scopedAdjustments.length;
+      historyEntries.push(...buildAdjustmentHistoryEntries(aluno, scopedAdjustments, "lote"));
+    }
 
     if (affectedRecords === 0) {
-      showNotification("info", "Nenhum ajuste sugerido nos registros carregados.");
+      showNotification("info", "Nenhum ajuste automatico disponivel no conjunto filtrado.");
       return;
     }
 
+    startTransition(() => {
+      setAlunos((previous) => previous.map((aluno) => updatedById.get(aluno.id) ?? aluno));
+    });
     recordAdjustments(historyEntries);
     showNotification(
       "success",
-      `${appliedFields} ajuste(s) aplicado(s) em ${affectedRecords} registro(s) da base carregada.`
+      `${appliedFields} ajuste(s) aplicado(s) em ${affectedRecords} registro(s) do conjunto filtrado.`
     );
-  }, [insightsById, recordAdjustments, showNotification]);
+  }, [filteredAlunos, insightsById, recordAdjustments, showNotification, startTransition]);
 
   const handleSaveAluno = useCallback(
     (aluno: Aluno, appliedAdjustments: AlunoAdjustment[] = []) => {
       if (editingAluno) {
-        setAlunos((previous) => previous.map((item) => (item.id === aluno.id ? aluno : item)));
+        startTransition(() => {
+          setAlunos((previous) => previous.map((item) => (item.id === aluno.id ? aluno : item)));
+        });
         showNotification("success", "Registro atualizado com sucesso.");
       } else {
-        setAlunos((previous) => {
-          if (previous.some((item) => item.id === aluno.id)) {
-            return previous;
-          }
-          return previous.concat(aluno);
+        startTransition(() => {
+          setAlunos((previous) => {
+            if (previous.some((item) => item.id === aluno.id)) {
+              return previous;
+            }
+            return previous.concat(aluno);
+          });
         });
         showNotification("success", "Novo registro inserido na base atual.");
       }
@@ -346,9 +477,11 @@ export function useAlunoWorkspace() {
         showNotification("success", `${appliedAdjustments.length} ajuste(s) aplicado(s) e salvos no registro.`);
       }
 
-      setIsFormOpen(false);
+      startTransition(() => {
+        setIsFormOpen(false);
+      });
     },
-    [editingAluno, recordAdjustments, showNotification]
+    [editingAluno, recordAdjustments, showNotification, startTransition]
   );
 
   const handleRevertAdjustment = useCallback(
@@ -369,18 +502,20 @@ export function useAlunoWorkspace() {
         return;
       }
 
-      setAlunos((previous) =>
-        previous.map((item) => (item.id === entry.alunoId ? { ...item, [entry.field]: entry.before } : item))
-      );
-      setAdjustmentHistory((previous) =>
-        previous.map((historyEntry) =>
-          historyEntry.id === entry.id ? { ...historyEntry, revertedAt: new Date().toISOString() } : historyEntry
-        )
-      );
-      setActiveTab("relatorio");
+      startTransition(() => {
+        setAlunos((previous) =>
+          previous.map((item) => (item.id === entry.alunoId ? { ...item, [entry.field]: entry.before } : item))
+        );
+        setAdjustmentHistory((previous) =>
+          previous.map((historyEntry) =>
+            historyEntry.id === entry.id ? { ...historyEntry, revertedAt: new Date().toISOString() } : historyEntry
+          )
+        );
+        setActiveTab("relatorio");
+      });
       showNotification("success", `Ajuste revertido para o campo ${entry.field}.`);
     },
-    [alunosById, showNotification]
+    [alunosById, showNotification, startTransition]
   );
 
   const handleExport = useCallback(() => {
@@ -393,10 +528,10 @@ export function useAlunoWorkspace() {
   }, [alunos.length, showNotification]);
 
   const handleConfirmExport = useCallback(
-    (exportFlag: ExportFlag) => {
+    (config: ExportConfig) => {
       try {
-        const prepared = prepareAlunosForExport(alunos, exportFlag);
-        exportarTXT(prepared.alunos, exportFlag);
+        const prepared = prepareAlunosForExport(alunos, config.exportFlag);
+        exportarTXT(prepared.alunos, config);
         setExportReport(prepared.report);
         setIssuesCurrentPage(1);
         setActiveTab("relatorio");
@@ -430,22 +565,24 @@ export function useAlunoWorkspace() {
       return;
     }
 
-    setAlunos([]);
-    setExportReport(null);
-    setAdjustmentHistory([]);
-    setEditingAluno(undefined);
-    setIsFormOpen(false);
-    setIsExportModalOpen(false);
-    setActiveTab("arquivo");
-    setCurrentPage(1);
-    setHistoryCurrentPage(1);
-    setIssuesCurrentPage(1);
-    setFilterMode("all");
-    setErrorFieldFilter(null);
-    setSearchTerm("");
-    setSearchField("all");
+    startTransition(() => {
+      setAlunos([]);
+      setExportReport(null);
+      setAdjustmentHistory([]);
+      setEditingAluno(undefined);
+      setIsFormOpen(false);
+      setIsExportModalOpen(false);
+      setActiveTab("arquivo");
+      setCurrentPage(1);
+      setHistoryCurrentPage(1);
+      setIssuesCurrentPage(1);
+      setFilterMode("all");
+      setErrorFieldFilter(null);
+      setSearchTerm("");
+      setSearchField("all");
+    });
     showNotification("info", "Os dados importados e o relatorio foram removidos.");
-  }, [showNotification]);
+  }, [showNotification, startTransition]);
 
   return {
     alunos,
@@ -473,6 +610,11 @@ export function useAlunoWorkspace() {
     totalIssuePages: issuesPage.totalPages,
     issuesPageSize,
     historyStats,
+    initialInstitutionCode,
+    isPending,
+    preferredAdjustmentField,
+    filteredAdjustableFields: filteredAdjustableRecords,
+    batchAdjustLabel,
     alunosById,
     editingAluno,
     isFormOpen,

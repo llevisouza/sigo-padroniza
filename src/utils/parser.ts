@@ -25,7 +25,7 @@ function normalizeDigitsIfExact(value: string, expectedLength: number): string {
   return digits.length === expectedLength ? digits : value.trim();
 }
 
-function recoverCep(linha: string): string {
+function recoverCep(linha: string, allowOverflowRecovery: boolean): string {
   const start = layout.cep.start;
   const end = layout.cep.end;
   const directValue = getFieldSlice(linha, "cep");
@@ -33,6 +33,10 @@ function recoverCep(linha: string): string {
 
   if (directDigits.length === 8) {
     return directDigits;
+  }
+
+  if (!allowOverflowRecovery) {
+    return directValue.trim();
   }
 
   // Small column shifts are common in dirty source files. Check nearby slices
@@ -75,7 +79,7 @@ function recoverCep(linha: string): string {
  * Each extracted field still passes through fixEncoding() because some legacy
  * files may arrive with mojibake even after the buffer-level decoding step.
  */
-export function parseLinha(linha: string): Aluno {
+export function parseLinha(linha: string, allowOverflowRecovery = false): Aluno {
   const id = crypto.randomUUID();
 
   const get = (field: keyof typeof layout) => {
@@ -105,7 +109,7 @@ export function parseLinha(linha: string): Aluno {
     numero: get("numero"),
     complemento: get("complemento"),
     bairro: get("bairro"),
-    cep: recoverCep(linha),
+    cep: recoverCep(linha, allowOverflowRecovery),
     telefone: onlyDigits(get("telefone")),
     email: get("email"),
     grau: (get("grau") || "1") as "1" | "2" | "3",
@@ -129,6 +133,7 @@ export function parseArquivo(conteudo: string): { alunos: Aluno[], errors: strin
 
   for (let i = 0; i < linhas.length; i++) {
     let linha = linhas[i];
+    const originalLength = linha.length;
     
     // Skip completely empty lines (often at the end of file)
     if (linha.length === 0) continue;
@@ -148,7 +153,7 @@ export function parseArquivo(conteudo: string): { alunos: Aluno[], errors: strin
     }
 
     try {
-      alunos.push(parseLinha(linha));
+      alunos.push(parseLinha(linha, originalLength > TOTAL_LENGTH));
     } catch (e) {
       errors.push(`Linha ${i + 1}: Erro ao processar dados do aluno.`);
     }

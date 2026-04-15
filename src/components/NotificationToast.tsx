@@ -1,5 +1,4 @@
 import { AlertCircle, CheckCircle2, Info, X } from "lucide-react";
-import { motion } from "motion/react";
 import { NotificationState } from "../types/AppUi";
 
 type NotificationToastProps = {
@@ -7,32 +6,43 @@ type NotificationToastProps = {
   onClose: () => void;
 };
 
+const toneByType = {
+  success: {
+    container: "border-emerald-200 bg-white text-slate-900",
+    icon: "text-emerald-600",
+  },
+  error: {
+    container: "border-rose-200 bg-white text-slate-900",
+    icon: "text-rose-600",
+  },
+  info: {
+    container: "border-blue-200 bg-white text-slate-900",
+    icon: "text-blue-600",
+  },
+} as const;
+
 export function NotificationToast({ notification, onClose }: NotificationToastProps) {
   if (!notification) {
     return null;
   }
 
   return (
-    <motion.div
-      key={`notification-${notification.message}`}
-      initial={{ opacity: 0, x: 100 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 100 }}
-      className={`fixed bottom-8 right-8 z-50 flex items-center rounded-2xl border px-6 py-4 shadow-2xl ${
-        notification.type === "success"
-          ? "border-green-200 bg-green-50 text-green-800"
-          : notification.type === "error"
-            ? "border-red-200 bg-red-50 text-red-800"
-            : "border-blue-200 bg-blue-50 text-blue-800"
-      }`}
-    >
-      {notification.type === "success" && <CheckCircle2 className="mr-3 h-5 w-5 text-green-600" />}
-      {notification.type === "error" && <AlertCircle className="mr-3 h-5 w-5 text-red-600" />}
-      {notification.type === "info" && <Info className="mr-3 h-5 w-5 text-blue-600" />}
-      <span className="text-sm font-bold">{notification.message}</span>
-      <button onClick={onClose} className="ml-4 rounded-full p-1 hover:bg-black/5">
-        <X className="h-4 w-4" />
-      </button>
-    </motion.div>
+    <div className="pointer-events-none fixed bottom-6 right-6 z-50 w-[min(440px,calc(100vw-2rem))]">
+      <div
+        className={`pointer-events-auto flex items-start gap-3 rounded-2xl border px-4 py-3.5 shadow-[0_18px_40px_rgba(15,23,42,0.12)] ${toneByType[notification.type].container}`}
+      >
+        {notification.type === "success" && <CheckCircle2 className={`mt-0.5 h-5 w-5 shrink-0 ${toneByType.success.icon}`} />}
+        {notification.type === "error" && <AlertCircle className={`mt-0.5 h-5 w-5 shrink-0 ${toneByType.error.icon}`} />}
+        {notification.type === "info" && <Info className={`mt-0.5 h-5 w-5 shrink-0 ${toneByType.info.icon}`} />}
+
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] leading-relaxed text-slate-600">{notification.message}</p>
+        </div>
+
+        <button onClick={onClose} className="rounded-xl p-1.5 text-current/60 transition-colors duration-150 hover:bg-slate-100 hover:text-current">
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
   );
 }

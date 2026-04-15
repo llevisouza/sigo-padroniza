@@ -4,6 +4,7 @@ import { createAluno } from "./helpers/sampleAluno";
 import { gerarConteudoTXT } from "../src/utils/generator";
 import { layout, TOTAL_LENGTH } from "../src/utils/layout";
 import { parseArquivo, parseArquivoFromBuffer } from "../src/utils/parser";
+import { validateAluno } from "../src/utils/validator";
 
 test("parser reimporta o layout exportado com 525 colunas", () => {
   const aluno = createAluno({
@@ -24,10 +25,10 @@ test("parser reimporta o layout exportado com 525 colunas", () => {
   assert.equal(alunos[0].turno, aluno.turno);
 });
 
-test("parser recupera CEP mascarado e preserva UTF-8 valido no buffer", () => {
+test("parser recupera CEP mascarado apenas em linha com overflow", () => {
   const aluno = createAluno({
-    nome: "JOSÉ ÁVILA",
-    nomeMae: "MARIA ÂNGELA",
+    nome: "JOS\u00c3\u2030 \u00c3\u0081VILA",
+    nomeMae: "MARIA \u00c3\u201aNGELA",
     cep: "41925157",
   });
 
@@ -39,7 +40,22 @@ test("parser recupera CEP mascarado e preserva UTF-8 valido no buffer", () => {
   const { alunos, errors } = parseArquivoFromBuffer(buffer);
   assert.equal(errors.length, 0);
   assert.equal(alunos.length, 1);
-  assert.equal(alunos[0].nome, "JOSÉ ÁVILA");
-  assert.equal(alunos[0].nomeMae, "MARIA ÂNGELA");
+  assert.equal(alunos[0].nome, "JOS\u00c3\u2030 \u00c3\u0081VILA");
+  assert.equal(alunos[0].nomeMae, "MARIA \u00c3\u201aNGELA");
   assert.equal(alunos[0].cep, "41925157");
+});
+
+test("reimportacao do arquivo exportado nao corrige CEP automaticamente", () => {
+  const aluno = createAluno({
+    cep: "41925-157",
+    telefone: "71999999999",
+  });
+
+  const conteudo = gerarConteudoTXT([aluno]);
+  const { alunos, errors } = parseArquivo(conteudo);
+
+  assert.equal(errors.length, 0);
+  assert.equal(alunos.length, 1);
+  assert.equal(alunos[0].cep, "41925-15");
+  assert.equal(validateAluno(alunos[0]).some((error) => error.field === "cep"), true);
 });

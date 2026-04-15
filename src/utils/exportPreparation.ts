@@ -1,8 +1,7 @@
 import { Aluno } from "../types/Aluno";
+import { ExportFlag } from "../types/Export";
 import { getAlunoAdjustments } from "./adjustments";
 import { ValidationError, validateAluno } from "./validator";
-
-export type ExportFlag = Aluno["flag"];
 
 export type ExportIssue = ValidationError & {
   alunoId: string;
