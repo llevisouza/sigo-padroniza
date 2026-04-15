@@ -20,12 +20,14 @@ export function AppHeader({
   onSearchFieldChange,
   onSearchTermChange,
 }: AppHeaderProps) {
+  const logoSrc = `${import.meta.env.BASE_URL}apple-touch-icon.png`;
+
   return (
     <header className="sticky top-0 z-40 shrink-0 border-b border-slate-200/80 bg-white/95 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center gap-4 px-4 sm:px-6 xl:px-8">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white shadow-sm">
-            <img src="/apple-touch-icon.png" alt="Logo do SIGO" className="h-7 w-7 object-contain" />
+            <img src={logoSrc} alt="Logo do SIGO" className="h-7 w-7 object-contain" />
           </div>
 
           <div className="min-w-0">

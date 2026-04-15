@@ -1,15 +1,36 @@
 # SIGO Padroniza
 
-Aplicação web para importar, revisar, corrigir e exportar arquivos TXT no leiaute fixo usado pelo fluxo de saneamento do SIGO/SETPS.
+Aplicacao web para importar, revisar, corrigir e exportar arquivos TXT no leiaute fixo usado no fluxo educacional do SIGO/SETPS.
 
-## O que o sistema faz
+## Visao geral
 
-- Importa arquivos `.txt` em lote no leiaute de 525 posições.
-- Tenta decodificar corretamente arquivos UTF-8 e legados em ISO-8859-1.
-- Valida campos obrigatórios, regras cadastrais e pendências de padronização.
-- Permite correções visíveis pelo usuário, com histórico de ajustes e reversão.
-- Exporta novamente no mesmo leiaute fixo, sem aplicar correções silenciosas.
-- Gera relatório de pendências existentes no momento da exportação.
+O projeto foi desenhado para saneamento operacional de bases grandes, com foco em:
+
+- importacao de arquivos `.txt`
+- validacao de campos obrigatorios e pendencias de padronizacao
+- correcao manual assistida
+- exportacao final no layout fixo
+- relatorio de ajustes e pendencias
+
+## Como o sistema funciona
+
+1. O usuario importa um ou mais arquivos TXT.
+2. O parser reconstrui os registros no leiaute de 525 posicoes.
+3. A validacao identifica erros, avisos e ajustes automaticos possiveis.
+4. O usuario revisa e corrige os registros na interface.
+5. A exportacao gera um novo TXT no padrao do layout.
+6. O relatorio registra o que ainda estava pendente no momento da exportacao.
+
+## Regra importante sobre armazenamento
+
+O sistema atual processa os dados no navegador.
+
+- Nao existe persistencia automatica em servidor ou banco externo.
+- Arquivos importados e alteracoes feitas na tela ficam apenas na sessao atual.
+- Fechar, recarregar a pagina ou trocar de dispositivo pode descartar o trabalho em andamento.
+- Para preservar o resultado, o usuario deve exportar o TXT e guardar sua propria copia saneada.
+
+Esse comportamento e intencional no estado atual do projeto e reduz custo de infraestrutura, mas exige disciplina operacional de exportacao e backup pelo usuario.
 
 ## Stack
 
@@ -24,22 +45,13 @@ Aplicação web para importar, revisar, corrigir e exportar arquivos TXT no leia
 ```text
 src/
   components/   interface e fluxos visuais
-  hooks/        estado principal da aplicação
-  types/        contratos de domínio e UI
-  utils/        parser, validator, exportação e paginação
-scripts/        verificações auxiliares
+  hooks/        estado principal da aplicacao
+  types/        contratos de dominio e UI
+  utils/        parser, validator, exportacao e regras auxiliares
 tests/          testes automatizados
-public/         ativos estáticos
+scripts/        verificacoes de apoio
+public/         ativos estaticos
 ```
-
-## Fluxo funcional
-
-1. O usuário importa um ou mais arquivos TXT.
-2. O parser reconstrói os registros conforme o leiaute fixo.
-3. A validação separa erros bloqueantes, avisos e ajustes sugeridos.
-4. O usuário corrige manualmente por registro ou em lote.
-5. Cada ajuste manual entra no relatório e pode ser revertido.
-6. A exportação gera um novo TXT com 525 colunas por linha.
 
 ## Scripts
 
@@ -52,31 +64,54 @@ npm run build
 npm run check:roundtrip
 ```
 
-## Testes atuais
+## Qualidade e validacao
 
-- `parser`: roundtrip e recuperação de CEP mascarado
-- `validator`: regras obrigatórias e mensagens de ajuste
-- `adjustmentHistory`: histórico, reversão e estatísticas
-- `pagination`: paginação do relatório
+O projeto possui verificacoes automatizadas para:
 
-## Segurança e privacidade
+- parser e roundtrip de exportacao
+- validator e regras obrigatorias
+- historico de ajustes e reversao
+- rotulos contextuais de ajuste
+- paginação do relatorio
 
-- Este repositório **não deve** subir arquivos reais de alunos.
-- O diretório `archive/` está no `.gitignore` por conter material local de referência e potenciais dados sensíveis.
-- Logs, builds, caches e arquivos `.env` também ficam fora do versionamento.
+Antes de publicar qualquer mudanca:
 
-## Variáveis de ambiente
+```bash
+npm run lint
+npm test
+npm run build
+```
 
-Nenhuma variável é obrigatória para rodar a versão atual localmente.
+## Publicacao atual
 
-## Publicação
+O repositório esta preparado para publicacao estatica.
 
-Antes de publicar:
+- Build: `npm run build`
+- Saida: `dist/`
+- Deploy atual: GitHub Pages por GitHub Actions
 
-1. Confirme que não há dados reais fora do `.gitignore`.
-2. Rode `npm run lint`, `npm test` e `npm run build`.
-3. Revise o arquivo [`docs/publicacao-github.md`](docs/publicacao-github.md).
+Quando o build roda no GitHub Pages, o `base path` e ajustado automaticamente para o nome do repositorio.
 
-## Licença
+## Seguranca e privacidade
 
-Definir conforme a política do projeto antes da publicação pública.
+- Nao suba arquivos reais de alunos para o repositório.
+- O diretorio `archive/` esta fora do versionamento.
+- Logs, artefatos de build, caches locais e arquivos `.env` tambem ficam fora do Git.
+- O uso operacional deve considerar que dados educacionais podem conter informacoes pessoais sensiveis.
+
+## Recomendacoes operacionais
+
+- Trabalhe sempre com copia local do arquivo original.
+- Revise as pendencias antes de exportar.
+- Exporte ao final de cada lote relevante de correcoes.
+- Mantenha controle proprio dos arquivos saneados gerados.
+- Nao trate a aplicacao atual como repositorio permanente de dados.
+
+## Repositorio
+
+- GitHub: `https://github.com/llevisouza/sigo-padroniza`
+- GitHub Pages: `https://llevisouza.github.io/sigo-padroniza/`
+
+## Licenca
+
+Definir conforme a politica do projeto antes de uma distribuicao publica mais ampla.

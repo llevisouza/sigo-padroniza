@@ -141,6 +141,11 @@ export function ExportModal({ open, onClose, onConfirm, initialInstitutionCode =
             <p className="mt-2 text-[12px] text-slate-400">Sugestao: {suggestedFullName}</p>
           </div>
 
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-[12px] leading-6 text-amber-800">
+            O sistema nao guarda a sessao atual em servidor. Gere e salve o arquivo exportado para preservar as
+            alteracoes feitas nesta base.
+          </div>
+
           {error && <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] font-medium text-rose-700">{error}</p>}
 
           <button

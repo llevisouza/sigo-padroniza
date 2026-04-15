@@ -1,75 +1,99 @@
-# Publicação no GitHub
+# Publicacao no GitHub
 
-## Diagnóstico do projeto
+## Objetivo
 
-O repositório está apto para publicação técnica, com estes pontos relevantes:
+Este documento descreve como manter o repositório publicavel sem expor dados operacionais de alunos e sem criar ambiguidade sobre o comportamento da aplicacao.
 
-- A aplicação compila e testa localmente.
-- O código está organizado em `components`, `hooks`, `types` e `utils`.
-- O `README` agora descreve o produto real, não mais o template original.
-- O `.gitignore` foi endurecido para evitar subir artefatos locais.
+## Estado atual do projeto
 
-## Risco principal identificado
+- Aplicacao client-side em React + Vite
+- Processamento executado no navegador do usuario
+- Sem persistencia automatica em servidor ou banco de dados
+- Publicacao estatica preparada para GitHub Pages
 
-O diretório `archive/` contém arquivos TXT grandes usados como referência local.
+## Risco principal
 
-Pelo domínio do sistema e pela análise do parser, esses arquivos têm alta probabilidade de conter dados reais ou sensíveis de alunos, como matrícula, nome, nome da mãe, CEP e CPF. Por isso, `archive/` foi excluído do versionamento.
+O maior risco do projeto nao esta no codigo estatico em si, mas no material local usado para teste e referencia.
+
+Arquivos TXT de operacao podem conter:
+
+- matricula
+- nome
+- nome da mae
+- RG
+- CPF
+- endereco
+- CEP
+- outros dados pessoais
+
+Por isso, material local de referencia deve permanecer fora do versionamento.
 
 ## O que deve subir
 
 - `src/`
 - `public/`
-- `scripts/`
 - `tests/`
+- `scripts/`
+- `index.html`
 - `package.json`
 - `package-lock.json`
-- `tsconfig.json`
 - `vite.config.ts`
-- `index.html`
+- `tsconfig.json`
 - `README.md`
 - `.gitignore`
-- `.env.example` apenas se continuar útil
+- `.github/workflows/`
+- `docs/`
 
-## O que não deve subir
+## O que nao deve subir
 
+- `archive/`
 - `node_modules/`
 - `dist/`
+- `coverage/`
 - `output/`
-- `*.log`
+- `.playwright-cli/`
 - arquivos `.env`
-- datasets e materiais locais em `archive/`
+- logs e artefatos temporarios
+- bases reais exportadas por instituicoes
 
-## Checklist antes do push
+## GitHub Pages
 
-1. Verificar `git status`.
-2. Confirmar que `archive/` está fora do staging.
+O deploy atual usa GitHub Actions com publicacao em GitHub Pages.
+
+Arquivos relevantes:
+
+- workflow: `.github/workflows/deploy-pages.yml`
+- configuracao do `base path`: `vite.config.ts`
+
+URL atual:
+
+- `https://llevisouza.github.io/sigo-padroniza/`
+
+## Mensagem obrigatoria ao usuario
+
+A interface e a documentacao devem deixar claro que:
+
+- o sistema nao guarda automaticamente a base do usuario em servidor
+- a sessao pode ser perdida ao fechar ou recarregar a pagina
+- o usuario precisa exportar e guardar o arquivo saneado por conta propria
+
+Isso evita expectativa errada de persistencia e reduz risco operacional.
+
+## Checklist antes de publicar
+
+1. Conferir `git status`.
+2. Garantir que nenhum dataset local foi adicionado.
 3. Rodar:
 
 ```bash
 npm run lint
 npm test
 npm run build
-npm run check:roundtrip
 ```
 
-4. Revisar se o nome e a descrição do repositório no GitHub estão corretos.
-5. Definir a licença do projeto.
+4. Revisar o `README.md`.
+5. Confirmar que o GitHub Pages continua habilitado no repositório.
 
-## Bloqueio atual para publicação
+## Observacao
 
-O GitHub CLI (`gh`) está instalado, mas a autenticação local está inválida. Enquanto isso não for corrigido, o repositório pode ser preparado localmente, mas não pode ser criado/pushado no GitHub.
-
-Comando esperado para corrigir:
-
-```bash
-gh auth login -h github.com
-```
-
-Depois disso, a publicação pode seguir com:
-
-```bash
-git init -b main
-git add .
-git commit -m "Prepare repository for GitHub"
-gh repo create <nome-do-repo> --source . --private --push
-```
+GitHub Pages e adequado para a versao atual porque a aplicacao e estatica e o processamento ocorre no navegador. Se no futuro houver autenticacao, persistencia real, trilha de auditoria ou compartilhamento entre instituicoes, o modelo de hospedagem precisara ser revisto.
