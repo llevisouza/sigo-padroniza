@@ -1,117 +1,231 @@
+<div align="center">
+
 # SIGO Padroniza
 
-Aplicacao web para importar, revisar, corrigir e exportar arquivos TXT no leiaute fixo usado no fluxo educacional do SIGO/SETPS.
+**Ferramenta de saneamento e padronização de bases educacionais no leiaute fixo SIGO/SETPS.**
 
-## Visao geral
+<br/>
 
-O projeto foi desenhado para saneamento operacional de bases grandes, com foco em:
+[![React](https://img.shields.io/badge/React-19-087EA4?style=for-the-badge&logo=react&logoColor=white)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-6-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Motion](https://img.shields.io/badge/Motion-12-FF0055?style=for-the-badge&logo=framer&logoColor=white)](https://motion.dev/)
+[![GitHub Pages](https://img.shields.io/badge/Deploy-GitHub_Pages-222222?style=for-the-badge&logo=github&logoColor=white)](https://llevisouza.github.io/sigo-padroniza/)
 
-- importacao de arquivos `.txt`
-- validacao de campos obrigatorios e pendencias de padronizacao
-- correcao manual assistida
-- exportacao final no layout fixo
-- relatorio de ajustes e pendencias
+</div>
 
-## Como o sistema funciona
+<br/>
 
-1. O usuario importa um ou mais arquivos TXT.
-2. O parser reconstrui os registros no leiaute de 525 posicoes.
-3. A validacao identifica erros, avisos e ajustes automaticos possiveis.
-4. O usuario revisa e corrige os registros na interface.
-5. A exportacao gera um novo TXT no padrao do layout.
-6. O relatorio registra o que ainda estava pendente no momento da exportacao.
+## 📋 Sobre o Projeto
 
-## Regra importante sobre armazenamento
+O **SIGO Padroniza** é uma aplicação web voltada para importação, revisão, correção e exportação de arquivos `.txt` no leiaute fixo de 525 posições utilizado no fluxo educacional do SIGO/SETPS.
 
-O sistema atual processa os dados no navegador.
+Foi projetado para o saneamento operacional de bases grandes, permitindo que operadores identifiquem e corrijam inconsistências de forma rápida e assistida, sem necessidade de infraestrutura de servidor.
 
-- Nao existe persistencia automatica em servidor ou banco externo.
-- Arquivos importados e alteracoes feitas na tela ficam apenas na sessao atual.
-- Fechar, recarregar a pagina ou trocar de dispositivo pode descartar o trabalho em andamento.
-- Para preservar o resultado, o usuario deve exportar o TXT e guardar sua propria copia saneada.
+<br/>
 
-Esse comportamento e intencional no estado atual do projeto e reduz custo de infraestrutura, mas exige disciplina operacional de exportacao e backup pelo usuario.
+## ✨ Funcionalidades
 
-## Stack
+| Recurso | Descrição |
+|---------|-----------|
+| **Importação** | Leitura de arquivos `.txt` com reconstrução automática dos registros |
+| **Validação** | Identificação de erros, avisos e ajustes automáticos possíveis |
+| **Correção assistida** | Edição manual com sugestões contextuais por campo |
+| **Ajuste em lote** | Aplicação de correções automáticas para campos padronizáveis |
+| **Histórico de ajustes** | Registro completo com possibilidade de reversão individual |
+| **Exportação** | Geração de arquivo `.txt` no padrão do leiaute fixo |
+| **Relatório de pendências** | Resumo do que permaneceu pendente no momento da exportação |
+| **Busca e filtros** | Localização rápida de registros por campo ou tipo de pendência |
 
-- React 19
-- TypeScript
-- Vite 6
-- Tailwind CSS 4
-- Motion
+<br/>
 
-## Estrutura principal
+## 🔄 Fluxo de Trabalho
 
-```text
-src/
-  components/   interface e fluxos visuais
-  hooks/        estado principal da aplicacao
-  types/        contratos de dominio e UI
-  utils/        parser, validator, exportacao e regras auxiliares
-tests/          testes automatizados
-scripts/        verificacoes de apoio
-public/         ativos estaticos
+```
+┌─────────────┐     ┌──────────────┐     ┌──────────────────┐     ┌───────────────┐
+│  Importação  │────▶│   Validação   │────▶│  Correção / Ajuste│────▶│  Exportação   │
+│  de arquivo  │     │  automática   │     │  manual ou lote   │     │  TXT final    │
+└─────────────┘     └──────────────┘     └──────────────────┘     └───────────────┘
+                                                                          │
+                                                                          ▼
+                                                                  ┌───────────────┐
+                                                                  │   Relatório    │
+                                                                  │  de pendências │
+                                                                  └───────────────┘
 ```
 
-## Scripts
+<br/>
+
+## 🛠️ Stack Técnica
+
+| Camada | Tecnologia | Versão | Finalidade |
+|--------|-----------|--------|------------|
+| **UI** | React | 19 | Componentes e renderização |
+| **Linguagem** | TypeScript | 5.8 | Tipagem estática e contratos |
+| **Build** | Vite | 6 | Bundler e servidor de desenvolvimento |
+| **Estilos** | Tailwind CSS | 4 | Estilização utilitária |
+| **Animações** | Motion | 12 | Transições e micro-animações |
+| **Ícones** | Lucide React | — | Iconografia consistente |
+| **Testes** | Node Test Runner + TSX | — | Testes automatizados |
+| **Deploy** | GitHub Actions + Pages | — | CI/CD e hospedagem estática |
+
+<br/>
+
+## 📁 Estrutura do Projeto
+
+```
+sigo-padroniza/
+├── src/
+│   ├── components/          # Componentes da interface
+│   │   ├── AppHeader.tsx            # Cabeçalho com busca e ações
+│   │   ├── DashboardSidebar.tsx     # Painel lateral com upload
+│   │   ├── FormAluno.tsx            # Formulário de edição de registro
+│   │   ├── TabelaAlunos.tsx         # Tabela principal de registros
+│   │   ├── WorkspaceView.tsx        # Área central com abas
+│   │   ├── ValidationBanner.tsx     # Banner de status da validação
+│   │   ├── ExportModal.tsx          # Modal de confirmação de exportação
+│   │   └── ...
+│   ├── hooks/
+│   │   └── useAlunoWorkspace.ts     # Estado central da aplicação
+│   ├── types/                       # Contratos de domínio e UI
+│   ├── utils/                       # Lógica de negócio
+│   │   ├── parser.ts                # Parser do leiaute fixo (525 posições)
+│   │   ├── validator.ts             # Regras de validação obrigatória
+│   │   ├── generator.ts             # Geração do TXT de saída
+│   │   ├── adjustments.ts           # Motor de ajustes automáticos
+│   │   ├── adjustmentHistory.ts     # Controle de histórico e reversão
+│   │   └── ...
+│   ├── App.tsx
+│   └── main.tsx
+├── tests/                   # Testes automatizados
+├── scripts/                 # Scripts de verificação auxiliar
+├── docs/                    # Documentação complementar
+├── public/                  # Ativos estáticos
+└── .github/workflows/       # Pipeline de deploy
+```
+
+<br/>
+
+## 🚀 Como Executar
+
+### Pré-requisitos
+
+- **Node.js** 18+
+- **npm** 9+
+
+### Instalação
 
 ```bash
+git clone https://github.com/llevisouza/sigo-padroniza.git
+cd sigo-padroniza
 npm install
+```
+
+### Desenvolvimento
+
+```bash
 npm run dev
-npm run lint
-npm test
+```
+
+Acesse em `http://localhost:3000`.
+
+### Build de produção
+
+```bash
 npm run build
+```
+
+Os arquivos otimizados serão gerados na pasta `dist/`.
+
+<br/>
+
+## 🧪 Testes e Qualidade
+
+```bash
+# Verificação de tipos
+npm run lint
+
+# Testes automatizados
+npm test
+
+# Verificação de roundtrip (importação → exportação)
 npm run check:roundtrip
 ```
 
-## Qualidade e validacao
+**Cobertura dos testes:**
 
-O projeto possui verificacoes automatizadas para:
+- Parser e reconstrução de registros no leiaute fixo
+- Validação de campos obrigatórios
+- Ajustes automáticos e apresentação contextual
+- Histórico de ajustes e reversão
+- Paginação do relatório de pendências
+- Integridade do roundtrip (importar → exportar → reimportar)
 
-- parser e roundtrip de exportacao
-- validator e regras obrigatorias
-- historico de ajustes e reversao
-- rotulos contextuais de ajuste
-- paginacao do relatorio
+<br/>
 
-Antes de publicar qualquer mudanca:
+## 🌐 Deploy
 
-```bash
-npm run lint
-npm test
-npm run build
-```
+O deploy é feito automaticamente via **GitHub Actions** para o **GitHub Pages**.
 
-## Publicacao atual
+| Item | Valor |
+|------|-------|
+| **Workflow** | `.github/workflows/deploy-pages.yml` |
+| **Trigger** | Push na branch principal |
+| **URL** | [llevisouza.github.io/sigo-padroniza](https://llevisouza.github.io/sigo-padroniza/) |
 
-O repositorio esta preparado para publicacao estatica.
+> O `base path` é ajustado automaticamente quando o build roda no ambiente do GitHub Actions.
 
-- Build: `npm run build`
-- Saida: `dist/`
-- Deploy atual: GitHub Pages por GitHub Actions
+<br/>
 
-Quando o build roda no GitHub Pages, o `base path` e ajustado automaticamente para o nome do repositorio.
+## ⚠️ Sobre Armazenamento
 
-## Seguranca e privacidade
+> **Importante:** O SIGO Padroniza processa todos os dados **exclusivamente no navegador**.
 
-- Nao suba arquivos reais de alunos para o repositorio.
-- O diretorio `archive/` esta fora do versionamento.
-- Logs, artefatos de build, caches locais e arquivos `.env` tambem ficam fora do Git.
-- O uso operacional deve considerar que dados educacionais podem conter informacoes pessoais sensiveis.
+- Não existe persistência automática em servidor ou banco de dados.
+- Fechar ou recarregar a página descarta o trabalho em andamento.
+- O usuário **deve exportar** o arquivo `.txt` e manter sua própria cópia saneada.
 
-## Recomendacoes operacionais
+Esse comportamento é intencional — reduz custos de infraestrutura e elimina a necessidade de autenticação — mas exige disciplina operacional por parte do usuário.
 
-- Trabalhe sempre com copia local do arquivo original.
-- Revise as pendencias antes de exportar.
-- Exporte ao final de cada lote relevante de correcoes.
-- Mantenha controle proprio dos arquivos saneados gerados.
-- Nao trate a aplicacao atual como repositorio permanente de dados.
+<br/>
 
-## Repositorio
+## 🔒 Segurança e Privacidade
 
-- GitHub: `https://github.com/llevisouza/sigo-padroniza`
-- GitHub Pages: `https://llevisouza.github.io/sigo-padroniza/`
+- **Não suba** arquivos reais de alunos para o repositório.
+- O diretório `archive/` está fora do versionamento.
+- Logs, artefatos de build, caches e arquivos `.env` são ignorados pelo Git.
+- Dados educacionais podem conter informações pessoais sensíveis (matrícula, CPF, RG, nome da mãe) — trate-os com o devido cuidado.
 
-## Licenca
+<br/>
 
-Definir conforme a politica do projeto antes de uma distribuicao publica mais ampla.
+## 📌 Boas Práticas de Uso
+
+1. Trabalhe sempre com uma **cópia** do arquivo original.
+2. Revise as pendências antes de exportar.
+3. Exporte ao final de cada lote relevante de correções.
+4. Mantenha controle próprio dos arquivos saneados gerados.
+5. Não use a aplicação como repositório permanente de dados.
+
+<br/>
+
+## 📚 Documentação
+
+| Documento | Descrição |
+|-----------|-----------|
+| [`docs/publicacao-github.md`](docs/publicacao-github.md) | Guia de publicação e checklist de segurança |
+
+<br/>
+
+## 🔗 Links
+
+| | |
+|---|---|
+| **Repositório** | [github.com/llevisouza/sigo-padroniza](https://github.com/llevisouza/sigo-padroniza) |
+| **Aplicação** | [llevisouza.github.io/sigo-padroniza](https://llevisouza.github.io/sigo-padroniza/) |
+
+<br/>
+
+## 📄 Licença
+
+A definir conforme a política do projeto antes de distribuição pública.

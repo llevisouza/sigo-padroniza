@@ -1,32 +1,32 @@
-# Publicacao no GitHub
+# Publicação no GitHub
 
 ## Objetivo
 
-Este documento descreve como manter o repositorio publicavel sem expor dados operacionais de alunos e sem criar ambiguidade sobre o comportamento da aplicacao.
+Este documento descreve como manter o repositório publicável sem expor dados operacionais de alunos e sem criar ambiguidade sobre o comportamento da aplicação.
 
 ## Estado atual do projeto
 
-- Aplicacao client-side em React + Vite
-- Processamento executado no navegador do usuario
-- Sem persistencia automatica em servidor ou banco de dados
-- Publicacao estatica preparada para GitHub Pages
+- Aplicação client-side em React + Vite
+- Processamento executado no navegador do usuário
+- Sem persistência automática em servidor ou banco de dados
+- Publicação estática preparada para GitHub Pages
 
 ## Risco principal
 
-O maior risco do projeto nao esta no codigo estatico em si, mas no material local usado para teste e referencia.
+O maior risco do projeto não está no código estático em si, mas no material local usado para teste e referência.
 
-Arquivos TXT de operacao podem conter:
+Arquivos TXT de operação podem conter:
 
-- matricula
+- matrícula
 - nome
-- nome da mae
+- nome da mãe
 - RG
 - CPF
-- endereco
+- endereço
 - CEP
 - outros dados pessoais
 
-Por isso, material local de referencia deve permanecer fora do versionamento.
+Por isso, material local de referência deve permanecer fora do versionamento.
 
 ## O que deve subir
 
@@ -44,7 +44,7 @@ Por isso, material local de referencia deve permanecer fora do versionamento.
 - `.github/workflows/`
 - `docs/`
 
-## O que nao deve subir
+## O que não deve subir
 
 - `archive/`
 - `node_modules/`
@@ -53,31 +53,31 @@ Por isso, material local de referencia deve permanecer fora do versionamento.
 - `output/`
 - `.playwright-cli/`
 - arquivos `.env`
-- logs e artefatos temporarios
-- bases reais exportadas por instituicoes
+- logs e artefatos temporários
+- bases reais exportadas por instituições
 
 ## GitHub Pages
 
-O deploy atual usa GitHub Actions com publicacao em GitHub Pages.
+O deploy atual usa GitHub Actions com publicação em GitHub Pages.
 
 Arquivos relevantes:
 
 - workflow: `.github/workflows/deploy-pages.yml`
-- configuracao do `base path`: `vite.config.ts`
+- configuração do `base path`: `vite.config.ts`
 
 URL atual:
 
 - `https://llevisouza.github.io/sigo-padroniza/`
 
-## Mensagem obrigatoria ao usuario
+## Mensagem obrigatória ao usuário
 
-A interface e a documentacao devem deixar claro que:
+A interface e a documentação devem deixar claro que:
 
-- o sistema nao guarda automaticamente a base do usuario em servidor
-- a sessao pode ser perdida ao fechar ou recarregar a pagina
-- o usuario precisa exportar e guardar o arquivo saneado por conta propria
+- o sistema não guarda automaticamente a base do usuário em servidor
+- a sessão pode ser perdida ao fechar ou recarregar a página
+- o usuário precisa exportar e guardar o arquivo saneado por conta própria
 
-Isso evita expectativa errada de persistencia e reduz risco operacional.
+Isso evita expectativa errada de persistência e reduz risco operacional.
 
 ## Checklist antes de publicar
 
@@ -92,8 +92,8 @@ npm run build
 ```
 
 4. Revisar o `README.md`.
-5. Confirmar que o GitHub Pages continua habilitado no repositorio.
+5. Confirmar que o GitHub Pages continua habilitado no repositório.
 
-## Observacao
+## Observação
 
-GitHub Pages e adequado para a versao atual porque a aplicacao e estatica e o processamento ocorre no navegador. Se no futuro houver autenticacao, persistencia real, trilha de auditoria ou compartilhamento entre instituicoes, o modelo de hospedagem precisara ser revisto.
+GitHub Pages é adequado para a versão atual porque a aplicação é estática e o processamento ocorre no navegador. Se no futuro houver autenticação, persistência real, trilha de auditoria ou compartilhamento entre instituições, o modelo de hospedagem precisará ser revisto.
