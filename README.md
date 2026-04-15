@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/apple-touch-icon.png" alt="SIGO Logo" width="120" />
+<img src="public/sigo-mark.svg" alt="SIGO Logo" width="120" />
 
 # SIGO Padroniza
 
