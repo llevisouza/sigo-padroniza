@@ -72,7 +72,7 @@ O projeto possui verificacoes automatizadas para:
 - validator e regras obrigatorias
 - historico de ajustes e reversao
 - rotulos contextuais de ajuste
-- paginação do relatorio
+- paginacao do relatorio
 
 Antes de publicar qualquer mudanca:
 
@@ -84,7 +84,7 @@ npm run build
 
 ## Publicacao atual
 
-O repositório esta preparado para publicacao estatica.
+O repositorio esta preparado para publicacao estatica.
 
 - Build: `npm run build`
 - Saida: `dist/`
@@ -94,7 +94,7 @@ Quando o build roda no GitHub Pages, o `base path` e ajustado automaticamente pa
 
 ## Seguranca e privacidade
 
-- Nao suba arquivos reais de alunos para o repositório.
+- Nao suba arquivos reais de alunos para o repositorio.
 - O diretorio `archive/` esta fora do versionamento.
 - Logs, artefatos de build, caches locais e arquivos `.env` tambem ficam fora do Git.
 - O uso operacional deve considerar que dados educacionais podem conter informacoes pessoais sensiveis.

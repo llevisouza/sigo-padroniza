@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Este documento descreve como manter o repositório publicavel sem expor dados operacionais de alunos e sem criar ambiguidade sobre o comportamento da aplicacao.
+Este documento descreve como manter o repositorio publicavel sem expor dados operacionais de alunos e sem criar ambiguidade sobre o comportamento da aplicacao.
 
 ## Estado atual do projeto
 
@@ -92,7 +92,7 @@ npm run build
 ```
 
 4. Revisar o `README.md`.
-5. Confirmar que o GitHub Pages continua habilitado no repositório.
+5. Confirmar que o GitHub Pages continua habilitado no repositorio.
 
 ## Observacao
 
