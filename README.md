@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="public/apple-touch-icon.png" alt="SIGO Logo" width="120" />
+
 # SIGO Padroniza
 
 **Ferramenta de saneamento e padronização de bases educacionais no leiaute fixo SIGO/SETPS.**
@@ -228,4 +230,4 @@ Esse comportamento é intencional — reduz custos de infraestrutura e elimina a
 
 ## Licença
 
-A definir conforme a política do projeto antes de distribuição pública.
+Distribuído sob a licença MIT. Veja [`LICENSE`](LICENSE) para mais informações.
