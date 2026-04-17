@@ -1,0 +1,25 @@
+package com.sigopadroniza.desktop.domain;
+
+/**
+ * Códigos padronizados de validação para facilitar paridade com o sistema web.
+ */
+public enum ValidationError {
+    NOME_OBRIGATORIO,
+    MATRICULA_OBRIGATORIA,
+    CODIGO_ESCOLA_OBRIGATORIO,
+    SEXO_INVALIDO,
+    DATA_NASCIMENTO_INVALIDA,
+    NOME_MAE_OBRIGATORIO,
+    ENDERECO_OBRIGATORIO,
+    NUMERO_OBRIGATORIO,
+    BAIRRO_OBRIGATORIO,
+    RG_OBRIGATORIO_MAIOR_10,
+    ORGAO_EXPEDIDOR_OBRIGATORIO,
+    DATA_EMISSAO_RG_INVALIDA,
+    CERTIDAO_OU_RG_OBRIGATORIO_MENOR_10,
+    CPF_TAMANHO_INVALIDO,
+    CPF_INVALIDO,
+    GRAU_INVALIDO,
+    TURNO_INVALIDO,
+    FLAG_INVALIDA
+}
