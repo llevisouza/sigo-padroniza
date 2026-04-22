@@ -40,3 +40,6 @@ Thumbs.db
 
 # Local reference material and datasets
 archive/
+
+# Desktop Java is maintained as a separate program/repository
+desktop-java/
